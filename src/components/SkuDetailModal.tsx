@@ -117,11 +117,15 @@ export default function SkuDetailModal({ skuData, onClose }: SkuDetailModalProps
               </div>
               <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '6px' }}>
                 <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>Inventario Actual</div>
-                <div style={{ fontWeight: 500 }}>{skuData.skuInfo.initialInventory.toLocaleString()} u.</div>
+                <div style={{ fontWeight: 500 }}>{skuData.projections[0]?.initialInventory?.toLocaleString() || 0} u.</div>
               </div>
               <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.75rem', borderRadius: '6px' }}>
                 <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>Consumo Promedio</div>
-                <div style={{ fontWeight: 500 }}>{skuData.skuInfo.weeklyAvgConsumption.toLocaleString()} u./sem</div>
+                <div style={{ fontWeight: 500 }}>
+                  {(skuData.projections.length > 0 
+                    ? Math.round(skuData.projections.reduce((sum, p) => sum + p.requiredMaterial, 0) / skuData.projections.length) 
+                    : 0).toLocaleString()} u./sem
+                </div>
               </div>
             </div>
 
