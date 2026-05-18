@@ -89,7 +89,7 @@ export default function SupplyChainMatrix({ data }: SupplyChainMatrixProps) {
                   <td className={styles.stickyCol}>
                     <div style={{ fontWeight: 600 }}>{row.skuInfo.sku}</div>
                     <div style={{ fontSize: '0.75rem', opacity: 0.7 }}>{row.skuInfo.description.substring(0, 30)}...</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--primary)' }}>LT: {row.skuInfo.leadTimeWeeks} sem | {row.skuInfo.buyer}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--primary)' }}>LT: {row.skuInfo.leadTimeWeeks} sem | MOQ: {row.skuInfo.moq.toLocaleString()} | {row.skuInfo.buyer}</div>
                   </td>
                   
                   {row.projections.map((p, idx) => {
