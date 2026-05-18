@@ -5,7 +5,7 @@ import { LayoutDashboard, Table, AlertTriangle, Settings, Box, PackageOpen, Chev
 import { useAuth } from '@/lib/authContext';
 
 interface SidebarProps {
-  buyerStats: Record<string, { total: number; atRisk: number; healthy: number }>;
+  buyerStats: Record<string, { total: number; atRisk: number }>;
 }
 
 export default function Sidebar({ buyerStats }: SidebarProps) {
