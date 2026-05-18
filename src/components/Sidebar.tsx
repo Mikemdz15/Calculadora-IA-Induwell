@@ -103,7 +103,7 @@ export default function Sidebar({ buyerStats }: SidebarProps) {
         </div>
       ) : (
         <div style={{ marginTop: '1rem', borderTop: '1px solid var(--panel-border)', paddingTop: '1.5rem', display: 'flex', justifyContent: 'center' }}>
-          <PackageOpen size={20} style={{ opacity: 0.5 }} title="Riesgo por Comprador" />
+          <span title="Riesgo por Comprador" style={{ display: 'flex' }}><PackageOpen size={20} style={{ opacity: 0.5 }} /></span>
         </div>
       )}
       
