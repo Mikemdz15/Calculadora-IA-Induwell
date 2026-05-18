@@ -79,7 +79,9 @@ export default function NegotiationsPanel({ data = [] }: NegotiationsPanelProps)
       description: skuInfo ? skuInfo.skuInfo.description : prev.description,
       supplier: skuInfo ? skuInfo.skuInfo.supplier : prev.supplier,
       inventory_qty: skuInfo && skuInfo.projections[0] ? skuInfo.projections[0].inventoryWithReceipts : prev.inventory_qty,
-      weekly_avg_consumption: skuInfo ? skuInfo.skuInfo.weeklyAvgConsumption : prev.weekly_avg_consumption,
+      weekly_avg_consumption: skuInfo && skuInfo.projections.length > 0 
+        ? Math.round(skuInfo.projections.reduce((sum, p) => sum + p.requiredMaterial, 0) / skuInfo.projections.length)
+        : prev.weekly_avg_consumption,
       buyer: profile?.full_name || prev.buyer
     }));
   };
