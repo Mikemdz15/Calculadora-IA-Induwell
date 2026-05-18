@@ -75,8 +75,7 @@ export default function AiDiagnosticPanel({ currentWeekId, data }: AiDiagnosticP
         max: d.skuInfo.maxOptimalStock,
         stockoutWeek: d.riskAssessment.stockoutWeekIdx !== null ? `Semana N+${d.riskAssessment.stockoutWeekIdx}` : 'Sin Ruptura',
         stockoutWeekIdx: d.riskAssessment.stockoutWeekIdx, // Numeric index for logical comparison
-        isCritical: d.riskAssessment.isCriticalRisk,
-        urgencyType: d.riskAssessment.urgencyType
+        isCritical: d.riskAssessment.isCriticalRisk
       }));
 
       // 3. Call API
