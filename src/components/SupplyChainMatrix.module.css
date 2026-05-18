@@ -1,0 +1,117 @@
+.wrapper {
+  position: relative;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+  box-shadow: var(--panel-shadow);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top Scrollbar */
+.topScroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  height: 12px;
+  background: rgba(0,0,0,0.02);
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.topScrollInner {
+  height: 1px;
+  /* Width will be set dynamically via React refs to match table width */
+}
+
+/* Main Matrix Container */
+.matrixContainer {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 70vh; /* Fixed height enables vertical scroll / sticky headers */
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate; /* Required for sticky */
+  border-spacing: 0;
+  text-align: right;
+}
+
+.table th,
+.table td {
+  padding: 0.3rem 0.4rem;
+  border-bottom: 1px solid var(--panel-border);
+  border-right: 1px solid var(--panel-border);
+  font-size: 0.75rem;
+}
+
+.table td {
+  white-space: nowrap;
+}
+
+.table th {
+  white-space: normal;
+  line-height: 1.2;
+  text-align: center;
+  vertical-align: bottom; /* Aligns text to bottom for a cleaner look with 2 lines */
+}
+
+/* Base sticky logic for headers */
+.table th {
+  background: var(--panel-bg);
+  backdrop-filter: blur(12px);
+  font-weight: 600;
+  position: sticky;
+  z-index: 10;
+  box-shadow: 0 1px 0 var(--panel-border);
+}
+
+.table tr:nth-child(1) th {
+  top: 0; /* First row of headers */
+}
+
+.table tr:nth-child(2) th {
+  top: 35px; /* Second row of headers - adjust based on actual row height */
+}
+
+/* Sticky first column (SKU info) */
+.stickyCol {
+  position: sticky;
+  left: 0;
+  background: var(--background);
+  z-index: 11;
+  text-align: left;
+  border-right: 3px solid var(--primary) !important; /* Thick separator for sticky col */
+}
+
+.table th.stickyCol {
+  z-index: 12; /* Corner cell must be highest z-index */
+  top: 0;
+}
+
+/* Week Groups */
+.weekGroupHeader {
+  text-align: center !important;
+  border-bottom: 2px solid var(--primary) !important;
+  color: var(--primary);
+  background: var(--background) !important;
+}
+
+.thickRightBorder {
+  border-right: 3px solid var(--foreground) !important;
+}
+
+/* Column Colors - using subtle background colors for dark/light mode compatibility */
+.colGray { background-color: rgba(128, 128, 128, 0.08); }
+.colYellow { background-color: rgba(234, 179, 8, 0.08); }
+.colGreen { background-color: rgba(34, 197, 94, 0.08); }
+.colRed { background-color: rgba(239, 68, 68, 0.08); }
+.colOrange { background-color: rgba(249, 115, 22, 0.08); }
+.colMustard { background-color: rgba(218, 165, 32, 0.08); }
+.colRoyalBlue { background-color: rgba(65, 105, 225, 0.08); }
+.colPurple { background-color: rgba(168, 85, 247, 0.08); }
+
+/* Text colors for specific alerts */
+.textDanger { color: var(--danger); font-weight: 600; }
+.textWarning { color: var(--warning); font-weight: 600; }
+.textSuccess { color: var(--success); }
+.textWhite { color: var(--foreground); }
