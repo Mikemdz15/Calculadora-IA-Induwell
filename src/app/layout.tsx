@@ -23,7 +23,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const companyId = cookieStore.get("selectedCompanyId")?.value;
   const selectedCompany = COMPANIES.find(c => c.id === companyId) || null;
 

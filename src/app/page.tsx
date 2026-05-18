@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 import { COMPANIES } from '@/config/companies';
 
 export default async function Home() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const companyId = cookieStore.get("selectedCompanyId")?.value;
   const selectedCompany = COMPANIES.find(c => c.id === companyId) || null;
 
