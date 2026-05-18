@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/lib/authContext';
 import { supabase } from '@/lib/supabase';
-import { AlertCircle, Building2 } from 'lucide-react';
+import { AlertCircle, Building2, Sun, Moon } from 'lucide-react';
 import { setCompanyCookie } from '@/app/actions';
 import { COMPANIES, CompanyConfig } from '@/config/companies';
 
@@ -13,6 +13,28 @@ export default function AuthWrapper({ children, sidebar, headerTitle, selectedCo
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoginLoading, setIsLoginLoading] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+
+  React.useEffect(() => {
+    // Check local storage or system preference on mount
+    const saved = localStorage.getItem('theme');
+    if (saved === 'light' || saved === 'dark') {
+      setTheme(saved);
+      document.documentElement.classList.remove('light', 'dark');
+      document.documentElement.classList.add(saved);
+    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+      setTheme('light');
+      document.documentElement.classList.add('light');
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(newTheme);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -212,6 +234,17 @@ export default function AuthWrapper({ children, sidebar, headerTitle, selectedCo
             }}>
               {profile.full_name ? profile.full_name.substring(0,2).toUpperCase() : 'U'}
             </div>
+            
+            <div style={{ width: '1px', height: '24px', background: 'var(--panel-border)', margin: '0 0.5rem' }}></div>
+            
+            <button 
+              onClick={toggleTheme}
+              title={theme === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro'}
+              style={{ background: 'transparent', border: 'none', color: 'var(--foreground)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '0.4rem' }}
+            >
+              {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+            </button>
+            
             <button 
               onClick={() => setCompanyCookie(null)}
               style={{ background: 'transparent', border: '1px solid var(--primary)', color: 'var(--primary)', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}
