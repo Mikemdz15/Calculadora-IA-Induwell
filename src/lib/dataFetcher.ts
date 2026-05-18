@@ -1,7 +1,7 @@
 import Papa from 'papaparse';
 import { SupplyChainRow, calculateProjections, getCurrentWeek } from './supplyChainLogic';
 
-const GOOGLE_SHEETS_CSV_URL = "https://docs.google.com/spreadsheets/d/1fQd9xCRT0LE6WFmphoSFvdxfWhbhlSMopijREGOT79I/export?format=csv&gid=0";
+const GOOGLE_SHEETS_BASE_URL = "https://docs.google.com/spreadsheets/d/1fQd9xCRT0LE6WFmphoSFvdxfWhbhlSMopijREGOT79I/export?format=csv";
 
 function parseNumber(value: string | undefined): number {
   if (!value || value === '-' || value === '$-') return 0;
@@ -11,12 +11,12 @@ function parseNumber(value: string | undefined): number {
   return isNaN(num) ? 0 : num;
 }
 
-export async function fetchSupplyChainData(): Promise<SupplyChainRow[]> {
+export async function fetchSupplyChainData(gid: string = '0'): Promise<SupplyChainRow[]> {
   const currentWeek = getCurrentWeek();
 
   try {
     const timestamp = new Date().getTime();
-    const response = await fetch(`${GOOGLE_SHEETS_CSV_URL}&t=${timestamp}`, {
+    const response = await fetch(`${GOOGLE_SHEETS_BASE_URL}&gid=${gid}&t=${timestamp}`, {
       cache: 'no-store'
     });
     

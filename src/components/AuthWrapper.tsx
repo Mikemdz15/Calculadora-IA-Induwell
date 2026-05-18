@@ -3,9 +3,11 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/lib/authContext';
 import { supabase } from '@/lib/supabase';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Building2 } from 'lucide-react';
+import { setCompanyCookie } from '@/app/actions';
+import { COMPANIES, CompanyConfig } from '@/config/companies';
 
-export default function AuthWrapper({ children, sidebar, headerTitle }: { children: React.ReactNode, sidebar: React.ReactNode, headerTitle: string }) {
+export default function AuthWrapper({ children, sidebar, headerTitle, selectedCompany }: { children: React.ReactNode, sidebar: React.ReactNode, headerTitle: string, selectedCompany?: CompanyConfig | null }) {
   const { user, profile, loading, signOut } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -133,6 +135,61 @@ export default function AuthWrapper({ children, sidebar, headerTitle }: { childr
     );
   }
 
+  // If user is authenticated but hasn't selected a company yet
+  if (!selectedCompany) {
+    return (
+      <div style={{ 
+        display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', 
+        background: 'var(--background)', padding: '2rem', flexDirection: 'column'
+      }}>
+        <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
+          <h2 style={{ fontSize: '2rem', fontWeight: 700, background: 'linear-gradient(to right, #60a5fa, #c084fc)', WebkitBackgroundClip: 'text', color: 'transparent', margin: '0 0 0.5rem 0' }}>
+            S&OP Control Hub
+          </h2>
+          <p style={{ color: 'var(--foreground)', opacity: 0.7 }}>Selecciona la sociedad a la que deseas acceder</p>
+        </div>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', width: '100%', maxWidth: '800px' }}>
+          {COMPANIES.map(company => (
+            <div 
+              key={company.id}
+              onClick={() => setCompanyCookie(company.id)}
+              style={{
+                background: 'var(--panel-bg)', border: '1px solid var(--panel-border)',
+                borderRadius: '12px', padding: '2rem', display: 'flex', flexDirection: 'column',
+                alignItems: 'center', gap: '1rem', cursor: 'pointer', transition: 'all 0.2s ease-in-out',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.borderColor = 'var(--primary)';
+                e.currentTarget.style.boxShadow = '0 12px 24px rgba(59, 130, 246, 0.2)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.borderColor = 'var(--panel-border)';
+                e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.1)';
+              }}
+            >
+              <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '1rem', borderRadius: '50%', color: 'var(--primary)' }}>
+                <Building2 size={32} />
+              </div>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>{company.name}</h3>
+              <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.6 }}>Ingresar al panel de control</p>
+            </div>
+          ))}
+        </div>
+        
+        <button 
+          onClick={signOut}
+          style={{ marginTop: '3rem', background: 'transparent', border: 'none', color: 'var(--foreground)', opacity: 0.6, cursor: 'pointer', textDecoration: 'underline' }}
+        >
+          Cerrar Sesión
+        </button>
+      </div>
+    );
+  }
+
   return (
     <>
       {sidebar}
@@ -155,6 +212,12 @@ export default function AuthWrapper({ children, sidebar, headerTitle }: { childr
             }}>
               {profile.full_name ? profile.full_name.substring(0,2).toUpperCase() : 'U'}
             </div>
+            <button 
+              onClick={() => setCompanyCookie(null)}
+              style={{ background: 'transparent', border: '1px solid var(--primary)', color: 'var(--primary)', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}
+            >
+              Cambiar Empresa
+            </button>
             <button 
               onClick={signOut}
               style={{ background: 'transparent', border: '1px solid var(--panel-border)', color: 'var(--foreground)', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}
