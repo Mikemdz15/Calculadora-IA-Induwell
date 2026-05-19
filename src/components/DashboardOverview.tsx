@@ -100,7 +100,7 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
       updated_at: new Date().toISOString()
     };
 
-    const { error } = await supabase.from('sku_reviews').upsert(payload, { onConflict: 'sku_id' });
+    const { error } = await supabase.from('sku_reviews').upsert(payload, { onConflict: 'sku_id,company_id' });
 
     if (!error) {
       // If setting either supervisor or planeador to true, and the other is already true
