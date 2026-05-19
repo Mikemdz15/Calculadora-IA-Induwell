@@ -89,7 +89,7 @@ export default function SupplyChainMatrix({ data }: SupplyChainMatrixProps) {
                   <td className={styles.stickyCol}>
                     <div style={{ fontWeight: 600 }}>{row.skuInfo.sku}</div>
                     <div style={{ fontSize: '0.75rem', opacity: 0.7 }}>{row.skuInfo.description.substring(0, 30)}...</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--primary)' }}>LT: {row.skuInfo.leadTimeWeeks} sem | MOQ: {row.skuInfo.moq.toLocaleString()} | {row.skuInfo.buyer}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--primary)' }}>LT: {row.skuInfo.leadTimeWeeks} sem | MOQ: {row.skuInfo.moq.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} | {row.skuInfo.buyer}</div>
                   </td>
                   
                   {row.projections.map((p, idx) => {
@@ -107,23 +107,23 @@ export default function SupplyChainMatrix({ data }: SupplyChainMatrixProps) {
                     
                     return (
                       <React.Fragment key={`${row.skuInfo.sku}-w${idx}`}>
-                        <td className={styles.colGray}>{p.requiredMaterial.toLocaleString()}</td>
-                        <td className={styles.colYellow}>{p.initialInventory.toLocaleString()}</td>
-                        <td className={styles.colGreen}>{p.receiptsQty.toLocaleString()}</td>
+                        <td className={styles.colGray}>{p.requiredMaterial.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td className={styles.colYellow}>{p.initialInventory.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td className={styles.colGreen}>{p.receiptsQty.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td className={`${styles.colRed} ${p.toBuyBomberazo > 0 ? styles.textDanger : ''}`}>
-                          {p.toBuyBomberazo > 0 ? p.toBuyBomberazo.toLocaleString() : '-'}
+                          {p.toBuyBomberazo > 0 ? p.toBuyBomberazo.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
                         </td>
                         <td className={poStatusClass}>{p.poToPlace}</td>
                         <td className={`${styles.colOrange} ${p.requiredPurchase > 0 ? styles.textWarning : ''}`}>
-                          {p.requiredPurchase > 0 ? p.requiredPurchase.toLocaleString() : '-'}
+                          {p.requiredPurchase > 0 ? p.requiredPurchase.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
                         </td>
-                        <td className={styles.colMustard}>{row.skuInfo.minSafetyStock.toLocaleString()}</td>
+                        <td className={styles.colMustard}>{row.skuInfo.minSafetyStock.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td className={`${styles.colRoyalBlue} ${invStatusClass}`}>
-                          {p.inventoryWithReceipts.toLocaleString()}
+                          {p.inventoryWithReceipts.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </td>
-                        <td className={styles.colMustard}>{row.skuInfo.maxOptimalStock.toLocaleString()}</td>
+                        <td className={styles.colMustard}>{row.skuInfo.maxOptimalStock.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td className={`${styles.colPurple} ${styles.thickRightBorder}`}>
-                          {p.preAuthPurchaseQty > 0 ? p.preAuthPurchaseQty.toLocaleString() : '-'}
+                          {p.preAuthPurchaseQty > 0 ? p.preAuthPurchaseQty.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
                         </td>
                       </React.Fragment>
                     );
