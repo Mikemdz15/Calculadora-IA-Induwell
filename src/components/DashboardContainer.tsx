@@ -10,7 +10,7 @@ import AiDiagnosticPanel from './AiDiagnosticPanel';
 import NegotiationsPanel from './NegotiationsPanel';
 import { supabase } from '@/lib/supabase';
 import { getISOWeekString } from '@/lib/dateUtils';
-import { Download } from 'lucide-react';
+import { Download, FilterX } from 'lucide-react';
 
 interface DashboardContainerProps {
   data: SupplyChainRow[];
@@ -56,6 +56,15 @@ export default function DashboardContainer({ data, companyId }: DashboardContain
     setSelectedSuppliers(allSuppliers);
     setSelectedSkus(allSkus);
   }, [allCategories, allBuyers, allSuppliers, allSkus]);
+
+  const handleClearFilters = () => {
+    setSelectedCategories(allCategories);
+    setSelectedBuyers(allBuyers);
+    setSelectedSuppliers(allSuppliers);
+    setSelectedSkus(allSkus);
+    setSelectedStockoutWeeks(stockoutOptions);
+    setSelectedReliefStatuses(reliefOptions);
+  };
 
   // Check system config for week lock
   useEffect(() => {
@@ -247,23 +256,46 @@ export default function DashboardContainer({ data, companyId }: DashboardContain
       <div style={{ position: 'relative', zIndex: 100, background: 'var(--panel-bg)', backdropFilter: 'blur(12px)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--panel-border)', marginBottom: '2rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <h3 style={{ fontSize: '1rem', margin: 0, opacity: 0.8 }}>Filtros Globales de S&OP</h3>
-          <button 
-            onClick={handleDownloadHistory}
-            style={{
-              background: 'transparent',
-              color: 'var(--primary)',
-              border: '1px solid var(--primary)',
-              padding: '0.5rem 1rem',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.85rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}>
-            <Download size={16} />
-            Descargar Históricos (CSV)
-          </button>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <button 
+              onClick={handleClearFilters}
+              style={{
+                background: 'rgba(239, 68, 68, 0.1)',
+                color: 'var(--danger)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                padding: '0.5rem 1rem',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
+              onMouseOut={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+            >
+              <FilterX size={16} />
+              Limpiar Filtros
+            </button>
+            <button 
+              onClick={handleDownloadHistory}
+              style={{
+                background: 'transparent',
+                color: 'var(--primary)',
+                border: '1px solid var(--primary)',
+                padding: '0.5rem 1rem',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+              <Download size={16} />
+              Descargar Históricos (CSV)
+            </button>
+          </div>
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
           <MultiSelect 
