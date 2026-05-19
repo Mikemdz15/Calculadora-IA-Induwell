@@ -267,7 +267,7 @@ export default function DashboardOverview({ data }: DashboardOverviewProps) {
                   }
 
                   return (
-                    <tr key={row.skuInfo.sku} style={{ opacity: review.director_vobo ? 0.5 : 1, transition: 'opacity 0.3s', cursor: 'pointer' }} onClick={() => setSelectedSku(row)}>
+                    <tr key={row.skuInfo.sku} style={{ opacity: review.director_vobo ? 0.7 : 1, transition: 'opacity 0.3s', cursor: 'pointer' }} onClick={() => setSelectedSku(row)}>
                       <td onClick={(e) => e.stopPropagation()} style={{ minWidth: '140px' }}>
                         <div style={{ display: 'flex', gap: '0.25rem' }}>
                           <button 
@@ -277,12 +277,12 @@ export default function DashboardOverview({ data }: DashboardOverviewProps) {
                             style={{
                               width: '24px', height: '24px', borderRadius: '4px', border: '1px solid var(--panel-border)',
                               background: review.supervisor_check ? 'var(--warning)' : 'transparent',
-                              color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              color: review.supervisor_check ? 'white' : 'var(--foreground)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                               cursor: (profile?.role === 'supervisor_planeador' || profile?.role === 'director') ? 'pointer' : 'not-allowed',
-                              opacity: (profile?.role === 'supervisor_planeador' || profile?.role === 'director') ? 1 : 0.5
+                              opacity: (profile?.role === 'supervisor_planeador' || profile?.role === 'director') ? 1 : 0.6
                             }}
                           >
-                            {review.supervisor_check ? <Check size={14} /> : <span style={{ fontSize: '10px', opacity: 0.5, fontWeight: 'bold' }}>S</span>}
+                            {review.supervisor_check ? <Check size={14} /> : <span style={{ fontSize: '10px', opacity: 0.7, fontWeight: 'bold' }}>S</span>}
                           </button>
                           <button 
                             title="Check Planeador"
@@ -291,12 +291,12 @@ export default function DashboardOverview({ data }: DashboardOverviewProps) {
                             style={{
                               width: '24px', height: '24px', borderRadius: '4px', border: '1px solid var(--panel-border)',
                               background: review.planeador_check ? 'var(--warning)' : 'transparent',
-                              color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              color: review.planeador_check ? 'white' : 'var(--foreground)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                               cursor: (profile?.role === 'supervisor_planeador' || profile?.role === 'director') ? 'pointer' : 'not-allowed',
-                              opacity: (profile?.role === 'supervisor_planeador' || profile?.role === 'director') ? 1 : 0.5
+                              opacity: (profile?.role === 'supervisor_planeador' || profile?.role === 'director') ? 1 : 0.6
                             }}
                           >
-                            {review.planeador_check ? <Check size={14} /> : <span style={{ fontSize: '10px', opacity: 0.5, fontWeight: 'bold' }}>P</span>}
+                            {review.planeador_check ? <Check size={14} /> : <span style={{ fontSize: '10px', opacity: 0.7, fontWeight: 'bold' }}>P</span>}
                           </button>
                           <button 
                             title="VoBo Director"
@@ -305,12 +305,12 @@ export default function DashboardOverview({ data }: DashboardOverviewProps) {
                             style={{
                               width: '24px', height: '24px', borderRadius: '4px', border: '1px solid var(--panel-border)',
                               background: review.director_vobo ? 'var(--success)' : 'transparent',
-                              color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              color: review.director_vobo ? 'white' : 'var(--foreground)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                               cursor: profile?.role === 'director' ? 'pointer' : 'not-allowed',
-                              opacity: profile?.role === 'director' ? 1 : 0.5
+                              opacity: profile?.role === 'director' ? 1 : 0.6
                             }}
                           >
-                            {review.director_vobo ? <ShieldCheck size={14} /> : <span style={{ fontSize: '10px', opacity: 0.5, fontWeight: 'bold' }}>D</span>}
+                            {review.director_vobo ? <ShieldCheck size={14} /> : <span style={{ fontSize: '10px', opacity: 0.7, fontWeight: 'bold' }}>D</span>}
                           </button>
                         </div>
                       </td>

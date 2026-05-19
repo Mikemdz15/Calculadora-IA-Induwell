@@ -2,7 +2,7 @@
   --background: #f4f6f8;
   --foreground: #1e293b;
   --panel-bg: rgba(255, 255, 255, 0.7);
-  --panel-border: rgba(255, 255, 255, 0.4);
+  --panel-border: rgba(0, 0, 0, 0.15);
   --panel-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
   
   /* Primary Colors */

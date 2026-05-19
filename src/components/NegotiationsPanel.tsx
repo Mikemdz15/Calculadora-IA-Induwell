@@ -457,7 +457,7 @@ export default function NegotiationsPanel({ data = [] }: NegotiationsPanelProps)
               const days = calculateDays(r.submission_date);
               
               return (
-                <tr key={r.id} style={{ opacity: isChecked ? 0.6 : 1 }}>
+                <tr key={r.id} style={{ opacity: isChecked ? 0.7 : 1 }}>
                   <td style={{ minWidth: '100px' }}>
                     <div style={{ display: 'flex', gap: '0.25rem' }}>
                       <button 
@@ -466,12 +466,12 @@ export default function NegotiationsPanel({ data = [] }: NegotiationsPanelProps)
                         onClick={() => toggleCheck(r.id, 'supervisor_check', r.supervisor_check)}
                         style={{
                           width: '24px', height: '24px', borderRadius: '4px', border: '1px solid var(--panel-border)',
-                          background: r.supervisor_check ? 'var(--warning)' : 'transparent', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          background: r.supervisor_check ? 'var(--warning)' : 'transparent', color: r.supervisor_check ? 'white' : 'var(--foreground)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                           cursor: (profile?.role === 'supervisor_planeador' || profile?.role === 'director') ? 'pointer' : 'not-allowed',
-                          opacity: (profile?.role === 'supervisor_planeador' || profile?.role === 'director') ? 1 : 0.5
+                          opacity: (profile?.role === 'supervisor_planeador' || profile?.role === 'director') ? 1 : 0.6
                         }}
                       >
-                        {r.supervisor_check ? <Check size={14} /> : <span style={{ fontSize: '10px', opacity: 0.5, fontWeight: 'bold' }}>S</span>}
+                        {r.supervisor_check ? <Check size={14} /> : <span style={{ fontSize: '10px', opacity: 0.7, fontWeight: 'bold' }}>S</span>}
                       </button>
                       <button 
                         title="Check Planeador"
@@ -479,12 +479,12 @@ export default function NegotiationsPanel({ data = [] }: NegotiationsPanelProps)
                         onClick={() => toggleCheck(r.id, 'planeador_check', r.planeador_check)}
                         style={{
                           width: '24px', height: '24px', borderRadius: '4px', border: '1px solid var(--panel-border)',
-                          background: r.planeador_check ? 'var(--warning)' : 'transparent', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          background: r.planeador_check ? 'var(--warning)' : 'transparent', color: r.planeador_check ? 'white' : 'var(--foreground)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                           cursor: (profile?.role === 'supervisor_planeador' || profile?.role === 'director') ? 'pointer' : 'not-allowed',
-                          opacity: (profile?.role === 'supervisor_planeador' || profile?.role === 'director') ? 1 : 0.5
+                          opacity: (profile?.role === 'supervisor_planeador' || profile?.role === 'director') ? 1 : 0.6
                         }}
                       >
-                        {r.planeador_check ? <Check size={14} /> : <span style={{ fontSize: '10px', opacity: 0.5, fontWeight: 'bold' }}>P</span>}
+                        {r.planeador_check ? <Check size={14} /> : <span style={{ fontSize: '10px', opacity: 0.7, fontWeight: 'bold' }}>P</span>}
                       </button>
                       <button 
                         title="VoBo Director"
@@ -492,12 +492,12 @@ export default function NegotiationsPanel({ data = [] }: NegotiationsPanelProps)
                         onClick={() => toggleCheck(r.id, 'director_check', r.director_check)}
                         style={{
                           width: '24px', height: '24px', borderRadius: '4px', border: '1px solid var(--panel-border)',
-                          background: r.director_check ? 'var(--success)' : 'transparent', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          background: r.director_check ? 'var(--success)' : 'transparent', color: r.director_check ? 'white' : 'var(--foreground)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                           cursor: profile?.role === 'director' ? 'pointer' : 'not-allowed',
-                          opacity: profile?.role === 'director' ? 1 : 0.5
+                          opacity: profile?.role === 'director' ? 1 : 0.6
                         }}
                       >
-                        {r.director_check ? <ShieldCheck size={14} /> : <span style={{ fontSize: '10px', opacity: 0.5, fontWeight: 'bold' }}>D</span>}
+                        {r.director_check ? <ShieldCheck size={14} /> : <span style={{ fontSize: '10px', opacity: 0.7, fontWeight: 'bold' }}>D</span>}
                       </button>
                     </div>
                   </td>
