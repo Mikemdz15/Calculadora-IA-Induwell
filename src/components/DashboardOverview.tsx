@@ -150,7 +150,7 @@ export default function DashboardOverview({ data }: DashboardOverviewProps) {
             <AlertCircle size={20} className={kpis.riskPercentage > 10 ? styles.dangerText : styles.warningText} />
           </div>
           <div className={styles.kpiValue}>
-            {kpis.riskPercentage.toFixed(1)}%
+            {kpis.riskPercentage.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%
           </div>
           <div className={styles.kpiSubtext}>
             {kpis.skusAtRisk} de {kpis.totalSkus} SKUs en riesgo inminente
@@ -163,7 +163,7 @@ export default function DashboardOverview({ data }: DashboardOverviewProps) {
             <TrendingDown size={20} className={kpis.bomberazosCount > 0 ? styles.dangerText : styles.successText} />
           </div>
           <div className={styles.kpiValue}>
-            {kpis.bomberazosCount}
+            {kpis.bomberazosCount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
           </div>
           <div className={styles.kpiSubtext}>
             Urgencias detectadas para cobertura inmediata
@@ -176,7 +176,7 @@ export default function DashboardOverview({ data }: DashboardOverviewProps) {
             <DollarSign size={20} className={styles.warningText} />
           </div>
           <div className={styles.kpiValue}>
-            ${(kpis.capitalTrapped / 1000).toFixed(1)}k
+            ${kpis.capitalTrapped.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
           </div>
           <div className={styles.kpiSubtext}>
             Capital inmovilizado por superar máximo óptimo
@@ -236,12 +236,12 @@ export default function DashboardOverview({ data }: DashboardOverviewProps) {
                   
                   const minDefW = ra.minDeficitWeekIdx;
                   const minDefLabel = minDefW !== null 
-                    ? `N+${minDefW} (${row.projections[minDefW].weekNumber}) | -${ra.minDeficitQty?.toLocaleString()}` 
+                    ? `N+${minDefW} (${row.projections[minDefW].weekNumber}) | -${ra.minDeficitQty?.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` 
                     : '-';
                     
                   const stockoutW = ra.stockoutWeekIdx;
                   const stockoutLabel = stockoutW !== null 
-                    ? `N+${stockoutW} (${row.projections[stockoutW].weekNumber}) | -${ra.stockoutQty?.toLocaleString()}` 
+                    ? `N+${stockoutW} (${row.projections[stockoutW].weekNumber}) | -${ra.stockoutQty?.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` 
                     : <span style={{opacity: 0.5}}>-</span>;
                   
                   // Relief formatting
@@ -253,7 +253,7 @@ export default function DashboardOverview({ data }: DashboardOverviewProps) {
                     const reliefWeekLabel = ra.reliefWeekIdx === 0 ? `N (${row.projections[0].weekNumber})` : `N+${ra.reliefWeekIdx} (${row.projections[ra.reliefWeekIdx].weekNumber})`;
                     reliefText = (
                       <span className={styles.successText} style={{ fontWeight: 500 }}>
-                        +{ra.reliefQty.toLocaleString()} en Semana {reliefWeekLabel}
+                        +{ra.reliefQty.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})} en Semana {reliefWeekLabel}
                       </span>
                     );
                     

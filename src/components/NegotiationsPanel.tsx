@@ -517,21 +517,21 @@ export default function NegotiationsPanel({ data = [] }: NegotiationsPanelProps)
                   <td style={{ fontWeight: 600 }}>{r.sku}</td>
                   <td style={{ maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={r.description}>{r.description}</td>
                   <td>{r.supplier}</td>
-                  <td style={{ textAlign: 'right' }}>{r.inventory_qty}</td>
-                  <td style={{ textAlign: 'right' }}>{r.weekly_avg_consumption}</td>
+                  <td style={{ textAlign: 'right' }}>{r.inventory_qty?.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                  <td style={{ textAlign: 'right' }}>{r.weekly_avg_consumption?.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                   <td style={{ textAlign: 'center', fontWeight: 600, color: calculateScope(r.inventory_qty, r.weekly_avg_consumption) < 2 ? 'var(--danger)' : 'inherit' }}>
-                    {calculateScope(r.inventory_qty, r.weekly_avg_consumption)}
+                    {calculateScope(r.inventory_qty, r.weekly_avg_consumption).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                   </td>
-                  <td style={{ textAlign: 'right' }}>${r.previous_price}</td>
-                  <td style={{ textAlign: 'right', color: r.new_price > r.previous_price ? 'var(--danger)' : 'var(--success)' }}>${r.new_price}</td>
+                  <td style={{ textAlign: 'right' }}>${r.previous_price?.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                  <td style={{ textAlign: 'right', color: r.new_price > r.previous_price ? 'var(--danger)' : 'var(--success)' }}>${r.new_price?.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                   <td style={{ textAlign: 'center' }}>{r.currency || 'MXN'}</td>
-                  <td style={{ textAlign: 'center' }}>{r.currency === 'USD' ? r.exchange_rate : '-'}</td>
+                  <td style={{ textAlign: 'center' }}>{r.currency === 'USD' ? (r.exchange_rate || 1).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
                   <td style={{ textAlign: 'right', fontWeight: 600 }}>
                     ${(r.new_price * (r.exchange_rate || 1)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                   </td>
                   <td style={{ textAlign: 'center', fontWeight: 600 }}>
                     <span style={{ color: r.new_price > r.previous_price ? 'var(--danger)' : 'var(--success)' }}>
-                      {calculateIncrease(r.previous_price, r.new_price)}%
+                      {calculateIncrease(r.previous_price, r.new_price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%
                     </span>
                   </td>
                   <td>{r.submission_date}</td>
