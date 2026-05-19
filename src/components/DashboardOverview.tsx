@@ -84,7 +84,22 @@ export default function DashboardOverview({ data }: DashboardOverviewProps) {
       updated_at: new Date().toISOString()
     };
 
-    await supabase.from('sku_reviews').upsert(payload, { onConflict: 'sku_id' });
+    const { error } = await supabase.from('sku_reviews').upsert(payload, { onConflict: 'sku_id' });
+
+    if (!error) {
+      // If setting either supervisor or planeador to true, and the other is already true
+      if (
+        (field === 'supervisor_check' && value === true && current.planeador_check === true) ||
+        (field === 'planeador_check' && value === true && current.supervisor_check === true)
+      ) {
+        await supabase.from('notifications').insert({
+          target_role: 'director',
+          message: `El SKU Crítico ${sku} tiene VoBo de Supervisor y Planeador y espera tu autorización final.`,
+          reference_id: sku,
+          reference_type: 'sku_review'
+        });
+      }
+    }
   };
 
   const kpis = calculateKPIs(data);

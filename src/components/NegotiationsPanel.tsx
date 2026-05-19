@@ -213,7 +213,24 @@ export default function NegotiationsPanel({ data = [] }: NegotiationsPanelProps)
         .update({ [field]: !currentValue })
         .eq('id', id);
 
-      if (error) throw error;
+      if (!error) {
+        const currentRecord = records.find(r => r.id === id);
+        if (currentRecord) {
+          if (
+            (field === 'supervisor_check' && !currentValue === true && currentRecord.planeador_check === true) ||
+            (field === 'planeador_check' && !currentValue === true && currentRecord.supervisor_check === true)
+          ) {
+            await supabase.from('notifications').insert({
+              target_role: 'director',
+              message: `La partida de negociación ${currentRecord.sku} tiene VoBo de Supervisor y Planeador y espera tu autorización final.`,
+              reference_id: id,
+              reference_type: 'negociacion'
+            });
+          }
+        }
+      } else {
+        throw error;
+      }
     } catch (err) {
       console.error(err);
       fetchRecords();

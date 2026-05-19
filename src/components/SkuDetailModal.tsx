@@ -50,15 +50,29 @@ export default function SkuDetailModal({ skuData, onClose }: SkuDetailModalProps
     e.preventDefault();
     if (!newComment.trim() || !profile) return;
 
+    const newCommentStr = newComment.trim();
     const { error } = await supabase.from('comments_history').insert({
       reference_id: skuData.skuInfo.sku,
       reference_type: 'sku_review',
       user_id: profile.id,
       user_name: profile.full_name,
-      comment: newComment.trim()
+      comment: newCommentStr
     });
 
     if (!error) {
+      // Notify other participants in the thread
+      const otherCommenters = Array.from(new Set(comments.map(c => c.user_name)))
+        .filter(name => name !== profile.full_name);
+      
+      for (const commenterName of otherCommenters) {
+        await supabase.from('notifications').insert({
+          target_buyer_name: commenterName,
+          message: `${profile.full_name} comentó en el SKU ${skuData.skuInfo.sku}: "${newCommentStr.substring(0, 30)}..."`,
+          reference_id: skuData.skuInfo.sku,
+          reference_type: 'sku_review'
+        });
+      }
+
       setNewComment('');
       fetchComments();
     } else {

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/lib/authContext';
 import { supabase } from '@/lib/supabase';
-import { AlertCircle, Building2, Sun, Moon } from 'lucide-react';
+import { AlertCircle, Building2, Sun, Moon, Bell, Check } from 'lucide-react';
 import { setCompanyCookie } from '@/app/actions';
 import { COMPANIES, CompanyConfig } from '@/config/companies';
 
@@ -14,6 +14,44 @@ export default function AuthWrapper({ children, sidebar, headerTitle, selectedCo
   const [error, setError] = useState<string | null>(null);
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  React.useEffect(() => {
+    if (user && profile) {
+      fetchNotifications();
+      // Optional: Set up real-time subscription
+      const channel = supabase.channel('notifications_channel')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, payload => {
+          fetchNotifications();
+        })
+        .subscribe();
+        
+      return () => {
+        supabase.removeChannel(channel);
+      }
+    }
+  }, [user, profile]);
+
+  const fetchNotifications = async () => {
+    if (!profile) return;
+    
+    // We fetch notifications where user_id = auth.uid() OR role matches OR target_buyer_name matches
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(20);
+      
+    if (data && !error) {
+      setNotifications(data);
+    }
+  };
+
+  const markAsRead = async (id: string) => {
+    await supabase.from('notifications').update({ is_read: true }).eq('id', id);
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+  };
 
   React.useEffect(() => {
     // Check local storage or system preference on mount
@@ -237,6 +275,62 @@ export default function AuthWrapper({ children, sidebar, headerTitle, selectedCo
             
             <div style={{ width: '1px', height: '24px', background: 'var(--panel-border)', margin: '0 0.5rem' }}></div>
             
+            <div style={{ position: 'relative' }}>
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                style={{ background: 'transparent', border: 'none', color: 'var(--foreground)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '0.4rem', position: 'relative' }}
+              >
+                <Bell size={20} />
+                {notifications.filter(n => !n.is_read).length > 0 && (
+                  <span style={{ 
+                    position: 'absolute', top: 0, right: 0, background: 'var(--danger)', color: 'white', 
+                    fontSize: '0.6rem', fontWeight: 'bold', width: '16px', height: '16px', 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' 
+                  }}>
+                    {notifications.filter(n => !n.is_read).length}
+                  </span>
+                )}
+              </button>
+              
+              {showNotifications && (
+                <div style={{
+                  position: 'absolute', top: '100%', right: 0, marginTop: '0.5rem', width: '300px',
+                  background: 'var(--panel-bg)', border: '1px solid var(--panel-border)', borderRadius: '8px',
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.2)', zIndex: 50, maxHeight: '400px', display: 'flex', flexDirection: 'column'
+                }}>
+                  <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--panel-border)', fontWeight: 600, fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    Notificaciones
+                    <button onClick={() => setShowNotifications(false)} style={{ background: 'transparent', border: 'none', color: 'var(--foreground)', opacity: 0.5, cursor: 'pointer' }}>×</button>
+                  </div>
+                  <div style={{ overflowY: 'auto', flex: 1 }}>
+                    {notifications.length === 0 ? (
+                      <div style={{ padding: '2rem 1rem', textAlign: 'center', opacity: 0.5, fontSize: '0.85rem' }}>
+                        No tienes notificaciones
+                      </div>
+                    ) : (
+                      notifications.map(n => (
+                        <div key={n.id} 
+                          onClick={() => !n.is_read && markAsRead(n.id)}
+                          style={{ 
+                            padding: '0.75rem 1rem', borderBottom: '1px solid var(--panel-border)', 
+                            background: n.is_read ? 'transparent' : 'rgba(59, 130, 246, 0.05)',
+                            cursor: n.is_read ? 'default' : 'pointer', transition: 'background 0.2s',
+                            display: 'flex', gap: '0.75rem'
+                          }}
+                        >
+                          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: n.is_read ? 'transparent' : 'var(--primary)', marginTop: '6px', flexShrink: 0 }}></div>
+                          <div>
+                            <p style={{ margin: '0 0 0.25rem 0', fontSize: '0.85rem', lineHeight: 1.3 }}>{n.message}</p>
+                            <span style={{ fontSize: '0.7rem', opacity: 0.5 }}>{new Date(n.created_at).toLocaleString()}</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <button 
               onClick={toggleTheme}
               title={theme === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro'}

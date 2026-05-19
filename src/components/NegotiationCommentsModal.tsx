@@ -47,15 +47,39 @@ export default function NegotiationCommentsModal({ record, onClose }: Negotiatio
     e.preventDefault();
     if (!newComment.trim() || !profile) return;
 
+    const newCommentStr = newComment.trim();
     const { error } = await supabase.from('comments_history').insert({
       reference_id: record.id,
       reference_type: 'negociacion',
       user_id: profile.id,
       user_name: profile.full_name,
-      comment: newComment.trim()
+      comment: newCommentStr
     });
 
     if (!error) {
+      // Notify the buyer if the commenter is not the buyer
+      if (profile.full_name !== record.buyer) {
+        await supabase.from('notifications').insert({
+          target_buyer_name: record.buyer,
+          message: `Nuevo comentario en tu partida ${record.sku}: "${newCommentStr.substring(0, 30)}..."`,
+          reference_id: record.id,
+          reference_type: 'negociacion'
+        });
+      }
+
+      // Notify other participants in the thread
+      const otherCommenters = Array.from(new Set(comments.map(c => c.user_name)))
+        .filter(name => name !== profile.full_name && name !== record.buyer);
+      
+      for (const commenterName of otherCommenters) {
+        await supabase.from('notifications').insert({
+          target_buyer_name: commenterName,
+          message: `${profile.full_name} respondió en la partida ${record.sku}: "${newCommentStr.substring(0, 30)}..."`,
+          reference_id: record.id,
+          reference_type: 'negociacion'
+        });
+      }
+
       setNewComment('');
       fetchComments();
     } else {
