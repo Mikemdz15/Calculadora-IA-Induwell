@@ -200,52 +200,90 @@ export default function AuthWrapper({ children, sidebar, headerTitle, selectedCo
     return (
       <div style={{ 
         display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', 
-        background: 'var(--background)', padding: '2rem', flexDirection: 'column'
+        background: 'radial-gradient(circle at center, var(--panel-bg) 0%, var(--background) 100%)',
+        padding: '2rem'
       }}>
-        <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
-          <h2 style={{ fontSize: '2rem', fontWeight: 700, background: 'linear-gradient(to right, #60a5fa, #c084fc)', WebkitBackgroundClip: 'text', color: 'transparent', margin: '0 0 0.5rem 0' }}>
-            S&OP Control Hub
-          </h2>
-          <p style={{ color: 'var(--foreground)', opacity: 0.7 }}>Selecciona la sociedad a la que deseas acceder</p>
-        </div>
-        
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', width: '100%', maxWidth: '800px' }}>
-          {COMPANIES.map(company => (
-            <div 
-              key={company.id}
-              onClick={() => setCompanyCookie(company.id)}
-              style={{
-                background: 'var(--panel-bg)', border: '1px solid var(--panel-border)',
-                borderRadius: '12px', padding: '2rem', display: 'flex', flexDirection: 'column',
-                alignItems: 'center', gap: '1rem', cursor: 'pointer', transition: 'all 0.2s ease-in-out',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
-              }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.borderColor = 'var(--primary)';
-                e.currentTarget.style.boxShadow = '0 12px 24px rgba(59, 130, 246, 0.2)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.borderColor = 'var(--panel-border)';
-                e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.1)';
-              }}
-            >
-              <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '1rem', borderRadius: '50%', color: 'var(--primary)' }}>
-                <Building2 size={32} />
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', maxWidth: '900px', width: '100%',
+          background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--panel-border)',
+          borderRadius: '16px', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          backdropFilter: 'blur(10px)'
+        }}>
+          {/* Left Side: Branding & Info */}
+          <div style={{
+            flex: '1 1 400px', padding: '3rem', 
+            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(168, 85, 247, 0.1))',
+            display: 'flex', flexDirection: 'column', justifyContent: 'center'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
+              <div style={{ background: 'var(--primary)', padding: '0.5rem', borderRadius: '8px' }}>
+                <Building2 size={24} color="white" />
               </div>
-              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>{company.name}</h3>
-              <p style={{ margin: 0, fontSize: '0.85rem', opacity: 0.6 }}>Ingresar al panel de control</p>
+              <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, background: 'linear-gradient(to right, #60a5fa, #c084fc)', WebkitBackgroundClip: 'text', color: 'transparent' }}>
+                S&OP Control Hub
+              </h1>
             </div>
-          ))}
+            
+            <h2 style={{ fontSize: '1.75rem', fontWeight: 600, marginBottom: '1rem', lineHeight: 1.2 }}>
+              Selección de Entorno de Trabajo
+            </h2>
+            
+            <p style={{ color: 'var(--foreground)', opacity: 0.8, lineHeight: 1.6, marginBottom: '1.5rem', fontSize: '0.95rem' }}>
+              Has iniciado sesión exitosamente. Ahora, selecciona la empresa o sociedad con la que deseas trabajar en esta sesión.
+            </p>
+            
+            <div style={{ borderLeft: '3px solid var(--primary)', paddingLeft: '1rem', opacity: 0.7, fontSize: '0.85rem' }}>
+              <p style={{ margin: '0 0 0.5rem 0' }}>• Los datos están aislados por sociedad de forma segura.</p>
+              <p style={{ margin: '0 0 0.5rem 0' }}>• El origen de datos se vincula a su propia hoja maestra.</p>
+              <p style={{ margin: 0 }}>• Puedes cambiar de empresa en cualquier momento desde el panel.</p>
+            </div>
+          </div>
+
+          {/* Right Side: Company Selection */}
+          <div style={{ flex: '1 1 350px', padding: '3rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', background: 'var(--panel-bg)' }}>
+            <h3 style={{ fontSize: '1.5rem', fontWeight: 600, marginBottom: '0.5rem' }}>Empresas Disponibles</h3>
+            <p style={{ opacity: 0.6, fontSize: '0.9rem', marginBottom: '2rem' }}>Haz clic en una sociedad para ingresar.</p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {COMPANIES.map(company => (
+                <div 
+                  key={company.id}
+                  onClick={() => setCompanyCookie(company.id)}
+                  style={{
+                    background: 'rgba(0,0,0,0.1)', border: '1px solid var(--panel-border)',
+                    borderRadius: '12px', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem',
+                    cursor: 'pointer', transition: 'all 0.2s ease-in-out'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.borderColor = 'var(--primary)';
+                    e.currentTarget.style.background = 'rgba(59, 130, 246, 0.05)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.borderColor = 'var(--panel-border)';
+                    e.currentTarget.style.background = 'rgba(0,0,0,0.1)';
+                  }}
+                >
+                  <div style={{ background: 'var(--primary)', padding: '0.75rem', borderRadius: '50%', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Building2 size={20} />
+                  </div>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>{company.name}</h3>
+                    <p style={{ margin: 0, fontSize: '0.8rem', opacity: 0.6 }}>Ingresar al panel de control</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <button 
+              onClick={signOut}
+              style={{ marginTop: '2rem', background: 'transparent', border: 'none', color: 'var(--foreground)', opacity: 0.6, cursor: 'pointer', textDecoration: 'underline', alignSelf: 'center', fontSize: '0.85rem' }}
+            >
+              Cerrar Sesión Segura
+            </button>
+          </div>
         </div>
-        
-        <button 
-          onClick={signOut}
-          style={{ marginTop: '3rem', background: 'transparent', border: 'none', color: 'var(--foreground)', opacity: 0.6, cursor: 'pointer', textDecoration: 'underline' }}
-        >
-          Cerrar Sesión
-        </button>
       </div>
     );
   }
