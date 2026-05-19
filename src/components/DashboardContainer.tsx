@@ -14,9 +14,10 @@ import { Download } from 'lucide-react';
 
 interface DashboardContainerProps {
   data: SupplyChainRow[];
+  companyId: string;
 }
 
-export default function DashboardContainer({ data }: DashboardContainerProps) {
+export default function DashboardContainer({ data, companyId }: DashboardContainerProps) {
   // 1. Exclude INDIRECTOS and empty categories globally for the dashboard
   const validData = useMemo(() => {
     return data.filter(d => {
@@ -61,6 +62,7 @@ export default function DashboardContainer({ data }: DashboardContainerProps) {
           .from('system_config')
           .select('value')
           .eq('key', 'current_week')
+          .eq('company_id', companyId)
           .single();
 
         if (error && error.code !== 'PGRST116') {
@@ -79,6 +81,7 @@ export default function DashboardContainer({ data }: DashboardContainerProps) {
           // If no config exists, create it
           await supabase.from('system_config').insert({
             key: 'current_week',
+            company_id: companyId,
             value: { week_id: actualWeekId }
           });
         }
@@ -99,7 +102,8 @@ export default function DashboardContainer({ data }: DashboardContainerProps) {
       // 1. Fetch current reviews
       const { data: currentReviews, error: fetchError } = await supabase
         .from('sku_reviews')
-        .select('*');
+        .select('*')
+        .eq('company_id', companyId);
         
       if (fetchError) throw fetchError;
 
@@ -110,7 +114,8 @@ export default function DashboardContainer({ data }: DashboardContainerProps) {
           sku_id: r.sku_id,
           is_resolved: r.is_resolved,
           comment: r.comment,
-          resolved_by_user_id: r.resolved_by_user_id
+          resolved_by_user_id: r.resolved_by_user_id,
+          company_id: companyId
         }));
 
         // 3. Insert into history
@@ -124,7 +129,8 @@ export default function DashboardContainer({ data }: DashboardContainerProps) {
         const { error: deleteError } = await supabase
           .from('sku_reviews')
           .delete()
-          .not('sku_id', 'is', null); // Delete all
+          .eq('company_id', companyId)
+          .not('sku_id', 'is', null); // Delete all for this company
 
         if (deleteError) throw deleteError;
       }
@@ -134,21 +140,26 @@ export default function DashboardContainer({ data }: DashboardContainerProps) {
         .from('weekly_diagnostics')
         .select('*')
         .eq('week_id', dbWeekId)
+        .eq('company_id', companyId)
         .single();
         
       if (currentDiag) {
         await supabase.from('weekly_diagnostics_history').insert({
           week_id: dbWeekId,
+          company_id: companyId,
           diagnosis_text: currentDiag.diagnosis_text
         });
-        await supabase.from('weekly_diagnostics').delete().eq('week_id', dbWeekId);
+        await supabase.from('weekly_diagnostics').delete()
+          .eq('week_id', dbWeekId)
+          .eq('company_id', companyId);
       }
 
       // 5. Update system config to actual week
       await supabase
         .from('system_config')
         .update({ value: { week_id: actualWeekId } })
-        .eq('key', 'current_week');
+        .eq('key', 'current_week')
+        .eq('company_id', companyId);
 
       // 6. Release lock
       setNeedsUpdate(false);
@@ -167,7 +178,10 @@ export default function DashboardContainer({ data }: DashboardContainerProps) {
 
   const handleDownloadHistory = async () => {
     // Simple implementation for downloading CSV
-    const { data, error } = await supabase.from('sku_reviews_history').select('*').order('week_id', { ascending: false });
+    const { data, error } = await supabase.from('sku_reviews_history')
+      .select('*')
+      .eq('company_id', companyId)
+      .order('week_id', { ascending: false });
     if (error || !data) {
       alert("Error al descargar el histórico");
       return;
@@ -221,6 +235,7 @@ export default function DashboardContainer({ data }: DashboardContainerProps) {
           currentWeek={actualWeekId} 
           onConfirm={handleConfirmUpdate} 
           isProcessing={isProcessingUpdate} 
+          companyId={companyId}
         />
       )}
 
@@ -287,20 +302,20 @@ export default function DashboardContainer({ data }: DashboardContainerProps) {
       </div>
 
       <div id="ai-diagnostic" style={{ marginBottom: '2rem' }}>
-        <AiDiagnosticPanel currentWeekId={actualWeekId} data={filteredData} />
+        <AiDiagnosticPanel currentWeekId={actualWeekId} data={filteredData} companyId={companyId} />
       </div>
 
       <div id="dashboard" style={{ marginBottom: '2rem' }}>
         {/* Pass filtered data to DashboardOverview */}
-        <DashboardOverview data={filteredData} />
+        <DashboardOverview data={filteredData} companyId={companyId} />
       </div>
 
       <div id="matriz" style={{ marginBottom: '2rem' }}>
         {/* Pass filtered data to SupplyChainMatrix */}
-        <SupplyChainMatrix data={filteredData} />
+        <SupplyChainMatrix data={filteredData} companyId={companyId} />
       </div>
 
-      <NegotiationsPanel data={validData} />
+      <NegotiationsPanel data={validData} companyId={companyId} />
     </div>
   );
 }

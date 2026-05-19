@@ -39,12 +39,13 @@ export default function AuthWrapper({ children, sidebar, headerTitle, selectedCo
   }, [user, profile]);
 
   const fetchNotifications = async () => {
-    if (!profile) return;
+    if (!profile || !selectedCompany) return;
     
     // We fetch notifications where user_id = auth.uid() OR role matches OR target_buyer_name matches
     const { data, error } = await supabase
       .from('notifications')
       .select('*')
+      .eq('company_id', selectedCompany.id)
       .order('created_at', { ascending: false })
       .limit(20);
       

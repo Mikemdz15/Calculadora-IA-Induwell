@@ -12,6 +12,7 @@ import SkuDetailModal from './SkuDetailModal';
 
 interface DashboardOverviewProps {
   data: SupplyChainRow[];
+  companyId: string;
 }
 
 export function getPostReliefStatusLabel(ra: GlobalRiskAssessment, minSafetyStock: number): string {
@@ -27,7 +28,7 @@ export function getPostReliefStatusLabel(ra: GlobalRiskAssessment, minSafetyStoc
   return 'Insuficiente';
 }
 
-export default function DashboardOverview({ data }: DashboardOverviewProps) {
+export default function DashboardOverview({ data, companyId }: DashboardOverviewProps) {
   const { profile } = useAuth();
   const [selectedSku, setSelectedSku] = useState<SupplyChainRow | null>(null);
   // Supabase State
@@ -36,7 +37,9 @@ export default function DashboardOverview({ data }: DashboardOverviewProps) {
   }>>({});
 
   const fetchReviews = async () => {
-    const { data, error } = await supabase.from('sku_reviews').select('sku_id, is_resolved, comment, supervisor_check, planeador_check, director_vobo');
+      const { data, error } = await supabase.from('sku_reviews')
+        .select('sku_id, is_resolved, comment, supervisor_check, planeador_check, director_vobo')
+        .eq('company_id', companyId);
     if (data && !error) {
       const reviewMap: Record<string, any> = {};
       data.forEach(r => {
@@ -81,6 +84,7 @@ export default function DashboardOverview({ data }: DashboardOverviewProps) {
       planeador_check: field === 'planeador_check' ? value : current.planeador_check,
       director_vobo: field === 'director_vobo' ? value : current.director_vobo,
       resolved_by_user_id: profile.id,
+      company_id: companyId,
       updated_at: new Date().toISOString()
     };
 
@@ -96,7 +100,8 @@ export default function DashboardOverview({ data }: DashboardOverviewProps) {
           target_role: 'director',
           message: `El SKU Crítico ${sku} tiene VoBo de Supervisor y Planeador y espera tu autorización final.`,
           reference_id: sku,
-          reference_type: 'sku_review'
+          reference_type: 'sku_review',
+          company_id: companyId
         });
       }
     }

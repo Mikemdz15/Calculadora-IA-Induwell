@@ -7,9 +7,10 @@ interface WeeklyUpdateModalProps {
   currentWeek: string;
   onConfirm: () => void;
   isProcessing: boolean;
+  companyId: string;
 }
 
-export default function WeeklyUpdateModal({ currentWeek, onConfirm, isProcessing }: WeeklyUpdateModalProps) {
+export default function WeeklyUpdateModal({ currentWeek, onConfirm, isProcessing, companyId }: WeeklyUpdateModalProps) {
   return (
     <div style={{
       position: 'fixed',

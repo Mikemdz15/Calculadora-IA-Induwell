@@ -17,9 +17,10 @@ interface CommentHistory {
 interface SkuDetailModalProps {
   skuData: SupplyChainRow;
   onClose: () => void;
+  companyId: string;
 }
 
-export default function SkuDetailModal({ skuData, onClose }: SkuDetailModalProps) {
+export default function SkuDetailModal({ skuData, onClose, companyId }: SkuDetailModalProps) {
   const { profile } = useAuth();
   const [comments, setComments] = useState<CommentHistory[]>([]);
   const [newComment, setNewComment] = useState('');
@@ -34,6 +35,7 @@ export default function SkuDetailModal({ skuData, onClose }: SkuDetailModalProps
       .select('*')
       .eq('reference_id', skuData.skuInfo.sku)
       .eq('reference_type', 'sku_review')
+      .eq('company_id', companyId)
       .order('created_at', { ascending: false });
     
     if (data && !error) {
@@ -56,7 +58,8 @@ export default function SkuDetailModal({ skuData, onClose }: SkuDetailModalProps
       reference_type: 'sku_review',
       user_id: profile.id,
       user_name: profile.full_name,
-      comment: newCommentStr
+      comment: newCommentStr,
+      company_id: companyId
     });
 
     if (!error) {
@@ -69,7 +72,8 @@ export default function SkuDetailModal({ skuData, onClose }: SkuDetailModalProps
           target_buyer_name: commenterName,
           message: `${profile.full_name} comentó en el SKU ${skuData.skuInfo.sku}: "${newCommentStr.substring(0, 30)}..."`,
           reference_id: skuData.skuInfo.sku,
-          reference_type: 'sku_review'
+          reference_type: 'sku_review',
+          company_id: companyId
         });
       }
 

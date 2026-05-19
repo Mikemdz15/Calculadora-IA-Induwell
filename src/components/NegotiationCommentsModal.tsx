@@ -16,9 +16,10 @@ interface CommentHistory {
 interface NegotiationCommentsModalProps {
   record: NegotiationRecord;
   onClose: () => void;
+  companyId: string;
 }
 
-export default function NegotiationCommentsModal({ record, onClose }: NegotiationCommentsModalProps) {
+export default function NegotiationCommentsModal({ record, onClose, companyId }: NegotiationCommentsModalProps) {
   const { profile } = useAuth();
   const [comments, setComments] = useState<CommentHistory[]>([]);
   const [newComment, setNewComment] = useState('');
@@ -31,6 +32,7 @@ export default function NegotiationCommentsModal({ record, onClose }: Negotiatio
       .select('*')
       .eq('reference_id', record.id)
       .eq('reference_type', 'negociacion')
+      .eq('company_id', companyId)
       .order('created_at', { ascending: false });
     
     if (data && !error) {
@@ -53,7 +55,8 @@ export default function NegotiationCommentsModal({ record, onClose }: Negotiatio
       reference_type: 'negociacion',
       user_id: profile.id,
       user_name: profile.full_name,
-      comment: newCommentStr
+      comment: newCommentStr,
+      company_id: companyId
     });
 
     if (!error) {
@@ -76,7 +79,8 @@ export default function NegotiationCommentsModal({ record, onClose }: Negotiatio
           target_buyer_name: commenterName,
           message: `${profile.full_name} respondió en la partida ${record.sku}: "${newCommentStr.substring(0, 30)}..."`,
           reference_id: record.id,
-          reference_type: 'negociacion'
+          reference_type: 'negociacion',
+          company_id: companyId
         });
       }
 

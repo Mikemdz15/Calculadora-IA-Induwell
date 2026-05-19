@@ -30,9 +30,10 @@ export interface NegotiationRecord {
 
 interface NegotiationsPanelProps {
   data?: SupplyChainRow[];
+  companyId: string;
 }
 
-export default function NegotiationsPanel({ data = [] }: NegotiationsPanelProps) {
+export default function NegotiationsPanel({ data = [], companyId }: NegotiationsPanelProps) {
   const { profile } = useAuth();
   const [records, setRecords] = useState<NegotiationRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -97,6 +98,7 @@ export default function NegotiationsPanel({ data = [] }: NegotiationsPanelProps)
         .from('partidas_negociacion')
         .select('*')
         .eq('month_id', selectedMonth)
+        .eq('company_id', companyId)
         .order('created_at', { ascending: false });
         
       if (error) throw error;
@@ -136,7 +138,8 @@ export default function NegotiationsPanel({ data = [] }: NegotiationsPanelProps)
         month_id: selectedMonth,
         director_check: false,
         supervisor_check: false,
-        planeador_check: false
+        planeador_check: false,
+        company_id: companyId
       }]).select().single();
 
       if (error) throw error;
@@ -148,7 +151,8 @@ export default function NegotiationsPanel({ data = [] }: NegotiationsPanelProps)
           reference_type: 'negociacion',
           user_id: profile.id,
           user_name: profile.full_name,
-          comment: newRecord.comments.trim()
+          comment: newRecord.comments.trim(),
+          company_id: companyId
         });
       }
 
@@ -224,7 +228,8 @@ export default function NegotiationsPanel({ data = [] }: NegotiationsPanelProps)
               target_role: 'director',
               message: `La partida de negociación ${currentRecord.sku} tiene VoBo de Supervisor y Planeador y espera tu autorización final.`,
               reference_id: id,
-              reference_type: 'negociacion'
+              reference_type: 'negociacion',
+              company_id: companyId
             });
           }
         }
@@ -601,6 +606,7 @@ export default function NegotiationsPanel({ data = [] }: NegotiationsPanelProps)
         <NegotiationCommentsModal 
           record={selectedRecordForComments} 
           onClose={() => setSelectedRecordForComments(null)} 
+          companyId={companyId}
         />
       )}
     </div>

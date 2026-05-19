@@ -10,9 +10,10 @@ import styles from './DashboardOverview.module.css';
 interface AiDiagnosticPanelProps {
   currentWeekId: string;
   data: SupplyChainRow[];
+  companyId: string;
 }
 
-export default function AiDiagnosticPanel({ currentWeekId, data }: AiDiagnosticPanelProps) {
+export default function AiDiagnosticPanel({ currentWeekId, data, companyId }: AiDiagnosticPanelProps) {
   const [diagnosis, setDiagnosis] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
@@ -29,6 +30,7 @@ export default function AiDiagnosticPanel({ currentWeekId, data }: AiDiagnosticP
           .from('weekly_diagnostics')
           .select('diagnosis_text')
           .eq('week_id', currentWeekId)
+          .eq('company_id', companyId)
           .maybeSingle();
 
         if (diagData && diagData.diagnosis_text) {
@@ -52,7 +54,10 @@ export default function AiDiagnosticPanel({ currentWeekId, data }: AiDiagnosticP
     setIsLoading(true);
     try {
       // 1. Fetch current human comments
-      const { data: reviews } = await supabase.from('sku_reviews').select('*');
+      const { data: reviews } = await supabase
+        .from('sku_reviews')
+        .select('*')
+        .eq('company_id', companyId);
       
       // 2. Filter data to only send relevant SKUs to AI (Critical risks or Overstock) to save tokens
       const relevantSkus = data.filter(d => {
@@ -100,8 +105,9 @@ export default function AiDiagnosticPanel({ currentWeekId, data }: AiDiagnosticP
       // 4. Save to Supabase
       await supabase.from('weekly_diagnostics').upsert({
         week_id: currentWeekId,
+        company_id: companyId,
         diagnosis_text: generatedText
-      }, { onConflict: 'week_id' });
+      }, { onConflict: 'week_id,company_id' });
 
       setDiagnosis(generatedText);
 

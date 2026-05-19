@@ -26,7 +26,7 @@ export default async function Home() {
         </p>
       </div>
 
-      <DashboardContainer data={data} />
+      <DashboardContainer data={data} companyId={companyId || 'alphalab'} />
     </div>
   );
 }
