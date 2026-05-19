@@ -2,12 +2,13 @@ import React from 'react';
 import { fetchSupplyChainData } from '@/lib/dataFetcher';
 import DashboardContainer from '@/components/DashboardContainer';
 import { cookies } from 'next/headers';
-import { COMPANIES } from '@/config/companies';
+import { getCompanies } from '@/config/companies';
 
 export default async function Home() {
   const cookieStore = await cookies();
   const companyId = cookieStore.get("selectedCompanyId")?.value;
-  const selectedCompany = COMPANIES.find(c => c.id === companyId) || null;
+  const companies = await getCompanies();
+  const selectedCompany = companies.find(c => c.id === companyId) || null;
 
   let data: any[] = [];
   if (selectedCompany) {

@@ -6,7 +6,7 @@ import { LayoutDashboard, Table, AlertTriangle, Settings, Box, PackageOpen } fro
 import { fetchSupplyChainData } from "@/lib/dataFetcher";
 import { calculateKPIs } from "@/lib/supplyChainLogic";
 import { cookies } from "next/headers";
-import { COMPANIES } from "@/config/companies";
+import { getCompanies } from "@/config/companies";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,7 +25,8 @@ export default async function RootLayout({
 }>) {
   const cookieStore = await cookies();
   const companyId = cookieStore.get("selectedCompanyId")?.value;
-  const selectedCompany = COMPANIES.find(c => c.id === companyId) || null;
+  const companies = await getCompanies();
+  const selectedCompany = companies.find(c => c.id === companyId) || null;
 
   let kpis = { buyerStats: {} };
   if (selectedCompany) {
@@ -48,6 +49,7 @@ export default async function RootLayout({
               sidebar={<Sidebar buyerStats={kpis.buyerStats} />} 
               headerTitle="Vista General"
               selectedCompany={selectedCompany}
+              companies={companies}
             >
               {children}
             </AuthWrapper>

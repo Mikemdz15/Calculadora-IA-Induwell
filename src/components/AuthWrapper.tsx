@@ -5,9 +5,9 @@ import { useAuth } from '@/lib/authContext';
 import { supabase } from '@/lib/supabase';
 import { AlertCircle, Building2, Sun, Moon, Bell, Check } from 'lucide-react';
 import { setCompanyCookie } from '@/app/actions';
-import { COMPANIES, CompanyConfig } from '@/config/companies';
+import { CompanyConfig } from '@/config/companies';
 
-export default function AuthWrapper({ children, sidebar, headerTitle, selectedCompany }: { children: React.ReactNode, sidebar: React.ReactNode, headerTitle: string, selectedCompany?: CompanyConfig | null }) {
+export default function AuthWrapper({ children, sidebar, headerTitle, selectedCompany, companies = [] }: { children: React.ReactNode, sidebar: React.ReactNode, headerTitle: string, selectedCompany?: CompanyConfig | null, companies?: CompanyConfig[] }) {
   const { user, profile, loading, signOut } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -16,6 +16,11 @@ export default function AuthWrapper({ children, sidebar, headerTitle, selectedCo
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showCreateCompany, setShowCreateCompany] = useState(false);
+  const [newCompanyId, setNewCompanyId] = useState('');
+  const [newCompanyName, setNewCompanyName] = useState('');
+  const [newCompanyGid, setNewCompanyGid] = useState('');
+  const [isCreatingCompany, setIsCreatingCompany] = useState(false);
 
   React.useEffect(() => {
     if (user && profile) {
@@ -245,7 +250,7 @@ export default function AuthWrapper({ children, sidebar, headerTitle, selectedCo
             <p style={{ opacity: 0.6, fontSize: '0.9rem', marginBottom: '2rem' }}>Haz clic en una sociedad para ingresar.</p>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {COMPANIES.map(company => (
+              {companies.map(company => (
                 <div 
                   key={company.id}
                   onClick={() => setCompanyCookie(company.id)}
@@ -275,6 +280,53 @@ export default function AuthWrapper({ children, sidebar, headerTitle, selectedCo
                 </div>
               ))}
             </div>
+
+            {profile?.role === 'director' && (
+              <div style={{ marginTop: '1.5rem', padding: '1.5rem', border: '1px dashed var(--panel-border)', borderRadius: '12px', background: 'rgba(255,255,255,0.02)' }}>
+                {!showCreateCompany ? (
+                  <button
+                    onClick={() => setShowCreateCompany(true)}
+                    style={{ width: '100%', background: 'transparent', color: 'var(--primary)', border: 'none', fontWeight: 600, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}
+                  >
+                    + Añadir Nueva Empresa
+                  </button>
+                ) : (
+                  <form onSubmit={async (e) => {
+                    e.preventDefault();
+                    setIsCreatingCompany(true);
+                    const { error } = await supabase.from('companies').insert({
+                      id: newCompanyId.trim().toLowerCase().replace(/\s+/g, '_'),
+                      name: newCompanyName.trim(),
+                      gid: newCompanyGid.trim()
+                    });
+                    if (!error) {
+                      setShowCreateCompany(false);
+                      setNewCompanyId('');
+                      setNewCompanyName('');
+                      setNewCompanyGid('');
+                      window.location.reload(); // Recargar para ver la nueva empresa
+                    } else {
+                      alert('Error creando empresa: ' + error.message);
+                    }
+                    setIsCreatingCompany(false);
+                  }} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <h4 style={{ margin: 0, fontSize: '1rem' }}>Nueva Empresa</h4>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.8rem', opacity: 0.7, marginBottom: '0.25rem' }}>Nombre Visible</label>
+                      <input required value={newCompanyName} onChange={e => { setNewCompanyName(e.target.value); setNewCompanyId(e.target.value); }} placeholder="Ej: Empresa Beta" style={{ width: '100%', padding: '0.5rem', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--panel-border)', borderRadius: '6px', color: 'white' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.8rem', opacity: 0.7, marginBottom: '0.25rem' }}>GID (Google Sheets)</label>
+                      <input required value={newCompanyGid} onChange={e => setNewCompanyGid(e.target.value)} placeholder="Ej: 123456789" style={{ width: '100%', padding: '0.5rem', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--panel-border)', borderRadius: '6px', color: 'white' }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button type="submit" disabled={isCreatingCompany} style={{ flex: 1, background: 'var(--primary)', color: 'white', border: 'none', padding: '0.5rem', borderRadius: '6px', cursor: 'pointer' }}>{isCreatingCompany ? 'Guardando...' : 'Guardar'}</button>
+                      <button type="button" onClick={() => setShowCreateCompany(false)} style={{ background: 'transparent', color: 'var(--foreground)', border: '1px solid var(--panel-border)', padding: '0.5rem', borderRadius: '6px', cursor: 'pointer' }}>Cancelar</button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            )}
             
             <button 
               onClick={signOut}

@@ -1,12 +1,30 @@
+import { supabase } from '@/lib/supabase';
+
 export interface CompanyConfig {
   id: string;
   name: string;
   gid: string;
 }
 
-export const COMPANIES: CompanyConfig[] = [
-  { id: 'alphalab', name: 'Grupo Alphalab', gid: '0' },
-  // Para agregar nuevas sociedades, simplemente descomenta la línea de abajo
-  // o agrega nuevas entradas con el formato:
-  // { id: 'empresa_ejemplo', name: 'Nueva Compañía SA de CV', gid: '123456789' }
-];
+export async function getCompanies(): Promise<CompanyConfig[]> {
+  const { data, error } = await supabase
+    .from('companies')
+    .select('*')
+    .order('name');
+    
+  if (error) {
+    console.error("Error fetching companies:", error);
+    // Fallback in case table doesn't exist yet
+    return [
+      { id: 'alphalab', name: 'Grupo Alphalab', gid: '0' }
+    ];
+  }
+  
+  if (!data || data.length === 0) {
+    return [
+      { id: 'alphalab', name: 'Grupo Alphalab', gid: '0' }
+    ];
+  }
+  
+  return data as CompanyConfig[];
+}
