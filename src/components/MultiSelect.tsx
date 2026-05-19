@@ -14,12 +14,14 @@ interface MultiSelectProps {
 
 export default function MultiSelect({ options, selected, onChange, placeholder, title }: MultiSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
+        setSearchTerm('');
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -34,13 +36,26 @@ export default function MultiSelect({ options, selected, onChange, placeholder, 
     }
   };
 
+  const filteredOptions = options.filter(o => o.toLowerCase().includes(searchTerm.toLowerCase()));
+
   const selectAll = () => {
-    if (selected.length === options.length) {
-      onChange([]);
+    if (searchTerm) {
+      const isAllFilteredSelected = filteredOptions.every(o => selected.includes(o));
+      if (isAllFilteredSelected) {
+        onChange(selected.filter(o => !filteredOptions.includes(o)));
+      } else {
+        const newSelected = new Set([...selected, ...filteredOptions]);
+        onChange(Array.from(newSelected));
+      }
     } else {
-      onChange([...options]);
+      if (selected.length === options.length) {
+        onChange([]);
+      } else {
+        onChange([...options]);
+      }
     }
   };
+
 
   return (
     <div className={styles.container} ref={containerRef}>
@@ -61,17 +76,38 @@ export default function MultiSelect({ options, selected, onChange, placeholder, 
 
       {isOpen && (
         <div className={styles.dropdown}>
-          <div 
+          {options.length > 10 && (
+            <div style={{ padding: '0.5rem', borderBottom: '1px solid var(--panel-border)' }}>
+              <input
+                type="text"
+                placeholder="Buscar..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.4rem',
+                  borderRadius: '4px',
+                  border: '1px solid var(--panel-border)',
+                  background: 'var(--background)',
+                  color: 'var(--foreground)',
+                  fontSize: '0.8rem',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+          )}
+          <div  
             className={styles.option} 
             style={{ borderBottom: '1px solid var(--panel-border)', fontWeight: 600 }}
             onClick={selectAll}
           >
-            <div className={`${styles.checkbox} ${selected.length === options.length ? styles.checked : ''}`}>
-              {selected.length === options.length && <Check size={12} />}
+            <div className={`${styles.checkbox} ${searchTerm ? (filteredOptions.every(o => selected.includes(o)) ? styles.checked : '') : (selected.length === options.length ? styles.checked : '')}`}>
+              {(searchTerm ? filteredOptions.every(o => selected.includes(o)) : selected.length === options.length) && <Check size={12} />}
             </div>
-            Seleccionar Todos
+            Seleccionar Todos (Filtrados)
           </div>
-          {options.map(option => (
+          {filteredOptions.map(option => (
             <div 
               key={option} 
               className={styles.option}

@@ -30,6 +30,7 @@ export default function DashboardContainer({ data, companyId }: DashboardContain
   const allCategories = useMemo(() => Array.from(new Set(validData.map(d => d.skuInfo.category).filter(c => c !== ''))).sort(), [validData]);
   const allBuyers = useMemo(() => Array.from(new Set(validData.map(d => d.skuInfo.buyer).filter(c => c !== ''))).sort(), [validData]);
   const allSuppliers = useMemo(() => Array.from(new Set(validData.map(d => d.skuInfo.supplier).filter(c => c !== ''))).sort(), [validData]);
+  const allSkus = useMemo(() => Array.from(new Set(validData.map(d => d.skuInfo.sku))).sort(), [validData]);
 
   const stockoutOptions = ['Semana N', 'Semana N+1', 'Semana N+2', 'Semana N+3', 'Semana N+4', 'Semana N+5', 'Sin Ruptura'];
   const reliefOptions = ['Crítico (Paro Potencial)', 'Recuperado', 'Parcial (Aún bajo Min)', 'Insuficiente', 'Sin Riesgo'];
@@ -37,6 +38,7 @@ export default function DashboardContainer({ data, companyId }: DashboardContain
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedBuyers, setSelectedBuyers] = useState<string[]>([]);
   const [selectedSuppliers, setSelectedSuppliers] = useState<string[]>([]);
+  const [selectedSkus, setSelectedSkus] = useState<string[]>([]);
   const [selectedStockoutWeeks, setSelectedStockoutWeeks] = useState<string[]>(stockoutOptions);
   const [selectedReliefStatuses, setSelectedReliefStatuses] = useState<string[]>(reliefOptions);
 
@@ -52,7 +54,8 @@ export default function DashboardContainer({ data, companyId }: DashboardContain
     setSelectedCategories(allCategories);
     setSelectedBuyers(allBuyers);
     setSelectedSuppliers(allSuppliers);
-  }, [allCategories, allBuyers, allSuppliers]);
+    setSelectedSkus(allSkus);
+  }, [allCategories, allBuyers, allSuppliers, allSkus]);
 
   // Check system config for week lock
   useEffect(() => {
@@ -210,6 +213,7 @@ export default function DashboardContainer({ data, companyId }: DashboardContain
       if (selectedCategories.length > 0 && !selectedCategories.includes(d.skuInfo.category)) return false;
       if (selectedBuyers.length > 0 && !selectedBuyers.includes(d.skuInfo.buyer)) return false;
       if (selectedSuppliers.length > 0 && !selectedSuppliers.includes(d.skuInfo.supplier)) return false;
+      if (selectedSkus.length > 0 && !selectedSkus.includes(d.skuInfo.sku)) return false;
 
       // 2. Match Stockout Week
       const w = d.riskAssessment.stockoutWeekIdx;
@@ -226,7 +230,7 @@ export default function DashboardContainer({ data, companyId }: DashboardContain
 
       return true;
     });
-  }, [validData, selectedCategories, selectedBuyers, selectedSuppliers, selectedStockoutWeeks, selectedReliefStatuses]);
+  }, [validData, selectedCategories, selectedBuyers, selectedSuppliers, selectedSkus, selectedStockoutWeeks, selectedReliefStatuses]);
 
   return (
     <div>
@@ -282,6 +286,13 @@ export default function DashboardContainer({ data, companyId }: DashboardContain
             selected={selectedSuppliers}
             onChange={setSelectedSuppliers}
             placeholder="Todos los Proveedores"
+          />
+          <MultiSelect 
+            title="SKU"
+            options={allSkus}
+            selected={selectedSkus}
+            onChange={setSelectedSkus}
+            placeholder="Todos los SKUs"
           />
           <div style={{ width: '1px', background: 'var(--panel-border)', margin: '0 0.5rem' }}></div>
           <MultiSelect 
