@@ -59,6 +59,18 @@ export default function AuthWrapper({ children, sidebar, headerTitle, selectedCo
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
   };
 
+  const handleNotificationClick = (n: any) => {
+    if (!n.is_read) markAsRead(n.id);
+    setShowNotifications(false);
+    
+    window.dispatchEvent(new CustomEvent('open-notification', { 
+      detail: { type: n.reference_type, id: n.reference_id } 
+    }));
+    
+    const sectionId = n.reference_type === 'sku_review' ? 'dashboard' : 'negociaciones';
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   React.useEffect(() => {
     // Check local storage or system preference on mount
     const saved = localStorage.getItem('theme');
@@ -401,11 +413,11 @@ export default function AuthWrapper({ children, sidebar, headerTitle, selectedCo
                     ) : (
                       notifications.map(n => (
                         <div key={n.id} 
-                          onClick={() => !n.is_read && markAsRead(n.id)}
+                          onClick={() => handleNotificationClick(n)}
                           style={{ 
                             padding: '0.75rem 1rem', borderBottom: '1px solid var(--panel-border)', 
                             background: n.is_read ? 'transparent' : 'rgba(59, 130, 246, 0.05)',
-                            cursor: n.is_read ? 'default' : 'pointer', transition: 'background 0.2s',
+                            cursor: 'pointer', transition: 'background 0.2s',
                             display: 'flex', gap: '0.75rem'
                           }}
                         >

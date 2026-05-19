@@ -57,7 +57,19 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
 
   useEffect(() => {
     fetchReviews();
-  }, []);
+
+    const handleOpenNotification = (e: any) => {
+      if (e.detail && e.detail.type === 'sku_review') {
+        const skuData = data.find(d => d.skuInfo.sku === e.detail.id);
+        if (skuData) {
+          setSelectedSku(skuData);
+        }
+      }
+    };
+
+    window.addEventListener('open-notification', handleOpenNotification);
+    return () => window.removeEventListener('open-notification', handleOpenNotification);
+  }, [data]);
 
   const handleUpdateReview = async (sku: string, field: 'is_resolved' | 'comment' | 'supervisor_check' | 'planeador_check' | 'director_vobo', value: any) => {
     if (!profile) return;

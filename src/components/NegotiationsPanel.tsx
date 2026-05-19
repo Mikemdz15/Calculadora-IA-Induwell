@@ -91,6 +91,20 @@ export default function NegotiationsPanel({ data = [], companyId }: Negotiations
     fetchRecords();
   }, [selectedMonth]);
 
+  useEffect(() => {
+    const handleOpenNotification = (e: any) => {
+      if (e.detail && e.detail.type === 'negociacion') {
+        const record = records.find(r => r.id === e.detail.id);
+        if (record) {
+          setSelectedRecordForComments(record);
+        }
+      }
+    };
+
+    window.addEventListener('open-notification', handleOpenNotification);
+    return () => window.removeEventListener('open-notification', handleOpenNotification);
+  }, [records]);
+
   const fetchRecords = async () => {
     setIsLoading(true);
     try {
