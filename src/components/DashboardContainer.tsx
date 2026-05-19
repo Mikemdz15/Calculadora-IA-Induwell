@@ -312,7 +312,7 @@ export default function DashboardContainer({ data, companyId }: DashboardContain
 
       <div id="matriz" style={{ marginBottom: '2rem' }}>
         {/* Pass filtered data to SupplyChainMatrix */}
-        <SupplyChainMatrix data={filteredData} companyId={companyId} />
+        <SupplyChainMatrix data={filteredData} />
       </div>
 
       <NegotiationsPanel data={validData} companyId={companyId} />

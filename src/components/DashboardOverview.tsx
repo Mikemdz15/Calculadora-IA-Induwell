@@ -375,7 +375,7 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
         </div>
       </div>
       {selectedSku && (
-        <SkuDetailModal skuData={selectedSku} onClose={() => { setSelectedSku(null); fetchReviews(); }} />
+        <SkuDetailModal skuData={selectedSku} onClose={() => { setSelectedSku(null); fetchReviews(); }} companyId={companyId} />
       )}
     </div>
   );
