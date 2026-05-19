@@ -30,7 +30,7 @@ export default function DashboardContainer({ data, companyId }: DashboardContain
   const allCategories = useMemo(() => Array.from(new Set(validData.map(d => d.skuInfo.category).filter(c => c !== ''))).sort(), [validData]);
   const allBuyers = useMemo(() => Array.from(new Set(validData.map(d => d.skuInfo.buyer).filter(c => c !== ''))).sort(), [validData]);
   const allSuppliers = useMemo(() => Array.from(new Set(validData.map(d => d.skuInfo.supplier).filter(c => c !== ''))).sort(), [validData]);
-  const allSkus = useMemo(() => Array.from(new Set(validData.map(d => d.skuInfo.sku))).sort(), [validData]);
+  const allSkus = useMemo(() => Array.from(new Set(validData.map(d => `${d.skuInfo.sku} - ${d.skuInfo.description}`))).sort(), [validData]);
 
   const stockoutOptions = ['Semana N', 'Semana N+1', 'Semana N+2', 'Semana N+3', 'Semana N+4', 'Semana N+5', 'Sin Ruptura'];
   const reliefOptions = ['Crítico (Paro Potencial)', 'Recuperado', 'Parcial (Aún bajo Min)', 'Insuficiente', 'Sin Riesgo'];
@@ -222,7 +222,10 @@ export default function DashboardContainer({ data, companyId }: DashboardContain
       if (selectedCategories.length > 0 && !selectedCategories.includes(d.skuInfo.category)) return false;
       if (selectedBuyers.length > 0 && !selectedBuyers.includes(d.skuInfo.buyer)) return false;
       if (selectedSuppliers.length > 0 && !selectedSuppliers.includes(d.skuInfo.supplier)) return false;
-      if (selectedSkus.length > 0 && !selectedSkus.includes(d.skuInfo.sku)) return false;
+      if (selectedSkus.length > 0) {
+        const isSkuSelected = selectedSkus.some(opt => opt.startsWith(d.skuInfo.sku + " -"));
+        if (!isSkuSelected) return false;
+      }
 
       // 2. Match Stockout Week
       const w = d.riskAssessment.stockoutWeekIdx;
