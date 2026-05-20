@@ -172,6 +172,48 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
     XLSX.writeFile(workbook, "Materiales_Criticos.xlsx");
   };
 
+  const exportOverStockToExcel = () => {
+    const overStockData = data
+      .filter(row => row.projections[0].isCapitalInefficiency)
+      .sort((a, b) => {
+        const valA = (a.projections[0].inventoryWithReceipts - a.skuInfo.maxOptimalStock) * a.skuInfo.unitPrice;
+        const valB = (b.projections[0].inventoryWithReceipts - b.skuInfo.maxOptimalStock) * b.skuInfo.unitPrice;
+        return valB - valA;
+      });
+
+    if (overStockData.length === 0) return;
+
+    const exportRows = overStockData.map(row => {
+      const review = reviews[row.skuInfo.sku] || { supervisor_check: false, planeador_check: false, director_vobo: false, comment: '' };
+      const currentInv = row.projections[0].inventoryWithReceipts;
+      const maxStock = row.skuInfo.maxOptimalStock;
+      const overStockQty = currentInv - maxStock;
+      const overStockVal = overStockQty * row.skuInfo.unitPrice;
+
+      return {
+        'Supervisor check': review.supervisor_check ? 'Sí' : 'No',
+        'Planeador check': review.planeador_check ? 'Sí' : 'No',
+        'VoBo Director': review.director_vobo ? 'Sí' : 'No',
+        'SKU': row.skuInfo.sku,
+        'Categoría': row.skuInfo.category,
+        'Proveedor': row.skuInfo.supplier,
+        'Precio Unitario Compra': row.skuInfo.unitPrice,
+        'Cantidad máxima permitida de stock': maxStock,
+        'Cantidad actual de inventario': currentInv,
+        'Cantidad de sobre stock': overStockQty,
+        'Valor de sobre stock': overStockVal,
+        'Estatus': 'Sobre inventario MOQ',
+        'Detalle / Comentarios': review.comment
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(exportRows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Capital Atrapado");
+    
+    XLSX.writeFile(workbook, "Capital_Atrapado_SobreStock.xlsx");
+  };
+
   return (
     <div>
       {/* Top Level KPIs */}
@@ -386,6 +428,156 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
           </div>
         </div>
       </div>
+
+      {/* Capital Atrapado (Sobre-stock) */}
+      <div style={{ marginTop: '2rem' }}>
+        <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+            <h3 style={{ fontSize: '1.1rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <DollarSign size={18} className={styles.warningText} />
+              Capital Atrapado (Sobre-stock) <span style={{fontSize: '0.9rem', opacity: 0.7, fontWeight: 'normal'}}>({data.filter(row => row.projections[0].isCapitalInefficiency).length} SKUs)</span>
+            </h3>
+            <button 
+              onClick={exportOverStockToExcel}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '0.5rem',
+                background: 'var(--primary, #3b82f6)', color: 'white',
+                border: 'none', padding: '0.5rem 1rem', borderRadius: '4px',
+                cursor: 'pointer', fontSize: '0.9rem', fontWeight: 500,
+                transition: 'background 0.2s'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.filter = 'brightness(1.1)'}
+              onMouseOut={(e) => e.currentTarget.style.filter = 'brightness(1)'}
+            >
+              <Download size={16} />
+              Exportar a Excel
+            </button>
+          </div>
+          
+          <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '400px' }}>
+            <table className={styles.table} style={{ position: 'relative' }}>
+              <thead style={{ position: 'sticky', top: 0, background: 'var(--background)', zIndex: 1, boxShadow: '0 1px 0 var(--panel-border)' }}>
+                <tr>
+                  <th>Validaciones</th>
+                  <th>SKU</th>
+                  <th>Categoría</th>
+                  <th>Proveedor</th>
+                  <th>Precio Unitario Compra</th>
+                  <th>Cantidad máxima permitida de stock</th>
+                  <th>Cantidad actual de inventario</th>
+                  <th>Cantidad de sobre stock</th>
+                  <th>Valor de sobre stock</th>
+                  <th>Estatus</th>
+                  <th>Detalle / Comentarios</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data
+                  .filter(row => row.projections[0].isCapitalInefficiency)
+                  .sort((a, b) => {
+                    const valA = (a.projections[0].inventoryWithReceipts - a.skuInfo.maxOptimalStock) * a.skuInfo.unitPrice;
+                    const valB = (b.projections[0].inventoryWithReceipts - b.skuInfo.maxOptimalStock) * b.skuInfo.unitPrice;
+                    return valB - valA;
+                  })
+                  .map(row => {
+                    const review = reviews[row.skuInfo.sku] || { is_resolved: false, comment: '', supervisor_check: false, planeador_check: false, director_vobo: false };
+                    
+                    const currentInv = row.projections[0].inventoryWithReceipts;
+                    const maxStock = row.skuInfo.maxOptimalStock;
+                    const overStockQty = Math.max(0, currentInv - maxStock);
+                    const overStockVal = overStockQty * row.skuInfo.unitPrice;
+
+                    return (
+                      <tr key={`overstock-${row.skuInfo.sku}`} style={{ opacity: review.director_vobo ? 0.7 : 1, transition: 'opacity 0.3s', cursor: 'pointer' }} onClick={() => setSelectedSku(row)}>
+                        <td onClick={(e) => e.stopPropagation()} style={{ minWidth: '140px' }}>
+                          <div style={{ display: 'flex', gap: '0.25rem' }}>
+                            <button 
+                              title="Check Supervisor"
+                              disabled={profile?.role !== 'supervisor_planeador' && profile?.role !== 'director'}
+                              onClick={() => handleUpdateReview(row.skuInfo.sku, 'supervisor_check', !review.supervisor_check)}
+                              style={{
+                                width: '24px', height: '24px', borderRadius: '4px', border: '1px solid var(--panel-border)',
+                                background: review.supervisor_check ? 'var(--warning)' : 'transparent',
+                                color: review.supervisor_check ? 'white' : 'var(--foreground)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: (profile?.role === 'supervisor_planeador' || profile?.role === 'director') ? 'pointer' : 'not-allowed',
+                                opacity: (profile?.role === 'supervisor_planeador' || profile?.role === 'director') ? 1 : 0.6
+                              }}
+                            >
+                              {review.supervisor_check ? <Check size={14} /> : <span style={{ fontSize: '10px', opacity: 0.7, fontWeight: 'bold' }}>S</span>}
+                            </button>
+                            <button 
+                              title="Check Planeador"
+                              disabled={profile?.role !== 'supervisor_planeador' && profile?.role !== 'director'}
+                              onClick={() => handleUpdateReview(row.skuInfo.sku, 'planeador_check', !review.planeador_check)}
+                              style={{
+                                width: '24px', height: '24px', borderRadius: '4px', border: '1px solid var(--panel-border)',
+                                background: review.planeador_check ? 'var(--warning)' : 'transparent',
+                                color: review.planeador_check ? 'white' : 'var(--foreground)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: (profile?.role === 'supervisor_planeador' || profile?.role === 'director') ? 'pointer' : 'not-allowed',
+                                opacity: (profile?.role === 'supervisor_planeador' || profile?.role === 'director') ? 1 : 0.6
+                              }}
+                            >
+                              {review.planeador_check ? <Check size={14} /> : <span style={{ fontSize: '10px', opacity: 0.7, fontWeight: 'bold' }}>P</span>}
+                            </button>
+                            <button 
+                              title="VoBo Director"
+                              disabled={profile?.role !== 'director'}
+                              onClick={() => handleUpdateReview(row.skuInfo.sku, 'director_vobo', !review.director_vobo)}
+                              style={{
+                                width: '24px', height: '24px', borderRadius: '4px', border: '1px solid var(--panel-border)',
+                                background: review.director_vobo ? 'var(--success)' : 'transparent',
+                                color: review.director_vobo ? 'white' : 'var(--foreground)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: profile?.role === 'director' ? 'pointer' : 'not-allowed',
+                                opacity: profile?.role === 'director' ? 1 : 0.6
+                              }}
+                            >
+                              {review.director_vobo ? <ShieldCheck size={14} /> : <span style={{ fontSize: '10px', opacity: 0.7, fontWeight: 'bold' }}>D</span>}
+                            </button>
+                          </div>
+                        </td>
+                        <td style={{ fontWeight: 500 }}>{row.skuInfo.sku}</td>
+                        <td>{row.skuInfo.category}</td>
+                        <td>{row.skuInfo.supplier}</td>
+                        <td>${row.skuInfo.unitPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</td>
+                        <td>{maxStock.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td style={{ color: 'var(--warning)', fontWeight: 500 }}>{currentInv.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td style={{ color: 'var(--danger)', fontWeight: 'bold' }}>{overStockQty.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td style={{ color: 'var(--danger)', fontWeight: 'bold' }}>${overStockVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td>
+                          <span className="badge danger" style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                            Sobre inventario MOQ
+                          </span>
+                        </td>
+                        <td onClick={(e) => e.stopPropagation()}>
+                          <button 
+                            onClick={() => setSelectedSku(row)}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: '0.5rem',
+                              background: 'rgba(255,255,255,0.05)', border: '1px solid var(--panel-border)',
+                              padding: '0.5rem 0.75rem', borderRadius: '4px', color: 'var(--foreground)',
+                              cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap'
+                            }}
+                          >
+                            <MessageSquare size={14} />
+                            Ver Detalles / Comentar
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                {data.filter(row => row.projections[0].isCapitalInefficiency).length === 0 && (
+                  <tr>
+                    <td colSpan={11} style={{ textAlign: 'center', padding: '2rem', opacity: 0.5 }}>
+                      No hay capital atrapado o sobre-stock registrado para esta selección
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       {selectedSku && (
         <SkuDetailModal skuData={selectedSku} onClose={() => { setSelectedSku(null); fetchReviews(); }} companyId={companyId} />
       )}
