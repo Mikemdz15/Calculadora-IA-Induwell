@@ -77,3 +77,28 @@
   font-size: 0.7rem;
   font-weight: 600;
 }
+
+.soloButton {
+  background: rgba(var(--primary-rgb, 99, 102, 241), 0.1);
+  color: var(--primary);
+  border: 1px solid rgba(var(--primary-rgb, 99, 102, 241), 0.4);
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0;
+  line-height: 1.2;
+}
+
+.option:hover .soloButton {
+  opacity: 1;
+}
+
+.soloButton:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+

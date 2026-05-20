@@ -28,18 +28,23 @@ export default function MultiSelect({ options, selected, onChange, placeholder, 
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const toggleOption = (option: string) => {
-    if (selected.includes(option)) {
-      onChange(selected.filter(item => item !== option));
+  const toggleOption = (option: string, forceSolo = false) => {
+    if (forceSolo) {
+      onChange([option]);
     } else {
-      onChange([...selected, option]);
+      if (selected.includes(option)) {
+        onChange(selected.filter(item => item !== option));
+      } else {
+        onChange([...selected, option]);
+      }
     }
   };
 
-  const filteredOptions = options.filter(o => o.toLowerCase().includes(searchTerm.toLowerCase()));
+  const cleanSearch = searchTerm.replace(/\s+/g, ' ').trim().toLowerCase();
+  const filteredOptions = options.filter(o => o.toLowerCase().includes(cleanSearch));
 
   const selectAll = () => {
-    if (searchTerm) {
+    if (cleanSearch) {
       const isAllFilteredSelected = filteredOptions.every(o => selected.includes(o));
       if (isAllFilteredSelected) {
         onChange(selected.filter(o => !filteredOptions.includes(o)));
@@ -99,26 +104,52 @@ export default function MultiSelect({ options, selected, onChange, placeholder, 
           )}
           <div  
             className={styles.option} 
-            style={{ borderBottom: '1px solid var(--panel-border)', fontWeight: 600 }}
+            style={{ borderBottom: '1px solid var(--panel-border)', fontWeight: 600, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
             onClick={selectAll}
           >
-            <div className={`${styles.checkbox} ${searchTerm ? (filteredOptions.every(o => selected.includes(o)) ? styles.checked : '') : (selected.length === options.length ? styles.checked : '')}`}>
-              {(searchTerm ? filteredOptions.every(o => selected.includes(o)) : selected.length === options.length) && <Check size={12} />}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div className={`${styles.checkbox} ${cleanSearch ? (filteredOptions.every(o => selected.includes(o)) ? styles.checked : '') : (selected.length === options.length ? styles.checked : '')}`}>
+                {(cleanSearch ? filteredOptions.every(o => selected.includes(o)) : selected.length === options.length) && <Check size={12} />}
+              </div>
+              <span>{cleanSearch ? "Seleccionar Todos (Filtrados)" : "Seleccionar Todos"}</span>
             </div>
-            Seleccionar Todos (Filtrados)
+            {selected.length > 0 && (
+              <span 
+                style={{ color: 'var(--danger)', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 500 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onChange([]);
+                }}
+              >
+                Limpiar
+              </span>
+            )}
           </div>
           {filteredOptions.map(option => (
             <div 
               key={option} 
               className={styles.option}
-              onClick={() => toggleOption(option)}
+              onClick={(e) => toggleOption(option, e.ctrlKey || e.metaKey)}
+              style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
             >
-              <div className={`${styles.checkbox} ${selected.includes(option) ? styles.checked : ''}`}>
-                {selected.includes(option) && <Check size={12} />}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', overflow: 'hidden', flex: 1 }}>
+                <div className={`${styles.checkbox} ${selected.includes(option) ? styles.checked : ''}`}>
+                  {selected.includes(option) && <Check size={12} />}
+                </div>
+                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={option}>
+                  {option}
+                </span>
               </div>
-              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {option}
-              </span>
+              <button
+                type="button"
+                className={styles.soloButton}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleOption(option, true);
+                }}
+              >
+                Solo
+              </button>
             </div>
           ))}
         </div>
