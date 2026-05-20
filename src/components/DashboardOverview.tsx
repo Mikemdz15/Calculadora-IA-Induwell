@@ -190,6 +190,8 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
       const overStockQty = currentInv - maxStock;
       const overStockVal = overStockQty * row.skuInfo.unitPrice;
 
+      const overStockPct = maxStock > 0 ? (overStockQty / maxStock) * 100 : 0;
+
       return {
         'Supervisor check': review.supervisor_check ? 'Sí' : 'No',
         'Planeador check': review.planeador_check ? 'Sí' : 'No',
@@ -201,6 +203,7 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
         'Cantidad máxima permitida de stock': maxStock,
         'Cantidad actual de inventario': currentInv,
         'Cantidad de sobre stock': overStockQty,
+        '% Excedente': `${overStockPct.toFixed(2)}%`,
         'Valor de sobre stock': overStockVal,
         'Estatus': 'Sobre inventario MOQ',
         'Detalle / Comentarios': review.comment
@@ -466,6 +469,7 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
                   <th>Cantidad máxima permitida de stock</th>
                   <th>Cantidad actual de inventario</th>
                   <th>Cantidad de sobre stock</th>
+                  <th>% Excedente</th>
                   <th>Valor de sobre stock</th>
                   <th>Estatus</th>
                   <th>Detalle / Comentarios</th>
@@ -542,6 +546,7 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
                         <td>{maxStock.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td style={{ color: 'var(--warning)', fontWeight: 500 }}>{currentInv.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td style={{ color: 'var(--danger)', fontWeight: 'bold' }}>{overStockQty.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td style={{ color: 'var(--warning)', fontWeight: 500 }}>{maxStock > 0 ? ((overStockQty / maxStock) * 100).toFixed(2) : '0.00'}%</td>
                         <td style={{ color: 'var(--danger)', fontWeight: 'bold' }}>${overStockVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td>
                           <span className="badge danger" style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
