@@ -36,6 +36,182 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
     is_resolved: boolean, comment: string, supervisor_check: boolean, planeador_check: boolean, director_vobo: boolean 
   }>>({});
 
+  // Sorting states
+  const [criticalSort, setCriticalSort] = useState<{ key: string; direction: 'asc' | 'desc' }>({
+    key: 'stockout',
+    direction: 'asc',
+  });
+  const [capitalSort, setCapitalSort] = useState<{ key: string; direction: 'asc' | 'desc' }>({
+    key: 'overStockVal',
+    direction: 'desc',
+  });
+
+  const handleSortCritical = (key: string) => {
+    setCriticalSort(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const handleSortCapital = (key: string) => {
+    setCapitalSort(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const renderSortIcon = (table: 'critical' | 'capital', key: string) => {
+    const sort = table === 'critical' ? criticalSort : capitalSort;
+    if (sort.key !== key) return <span style={{ opacity: 0.3, marginLeft: '0.25rem' }}>↕</span>;
+    return sort.direction === 'asc' 
+      ? <span style={{ marginLeft: '0.25rem', color: 'var(--primary)', fontSize: '0.75rem' }}>▲</span> 
+      : <span style={{ marginLeft: '0.25rem', color: 'var(--primary)', fontSize: '0.75rem' }}>▼</span>;
+  };
+
+  const getSortedCriticalData = () => {
+    const criticalData = data.filter(row => row.riskAssessment.isCriticalRisk);
+    
+    return criticalData.sort((a, b) => {
+      let valA: any = '';
+      let valB: any = '';
+      
+      const revA = reviews[a.skuInfo.sku] || { is_resolved: false, supervisor_check: false, planeador_check: false, director_vobo: false };
+      const revB = reviews[b.skuInfo.sku] || { is_resolved: false, supervisor_check: false, planeador_check: false, director_vobo: false };
+
+      switch (criticalSort.key) {
+        case 'resolved':
+          valA = (revA.supervisor_check ? 1 : 0) + (revA.planeador_check ? 1 : 0) + (revA.director_vobo ? 1 : 0);
+          valB = (revB.supervisor_check ? 1 : 0) + (revB.planeador_check ? 1 : 0) + (revB.director_vobo ? 1 : 0);
+          break;
+        case 'sku':
+          valA = a.skuInfo.sku;
+          valB = b.skuInfo.sku;
+          break;
+        case 'category':
+          valA = a.skuInfo.category;
+          valB = b.skuInfo.category;
+          break;
+        case 'supplier':
+          valA = a.skuInfo.supplier;
+          valB = b.skuInfo.supplier;
+          break;
+        case 'leadTime':
+          valA = a.skuInfo.leadTimeWeeks;
+          valB = b.skuInfo.leadTimeWeeks;
+          break;
+        case 'minDeficit':
+          valA = a.riskAssessment.minDeficitWeekIdx ?? (criticalSort.direction === 'asc' ? 999 : -1);
+          valB = b.riskAssessment.minDeficitWeekIdx ?? (criticalSort.direction === 'asc' ? 999 : -1);
+          break;
+        case 'stockout':
+          valA = a.riskAssessment.stockoutWeekIdx ?? (criticalSort.direction === 'asc' ? 999 : -1);
+          valB = b.riskAssessment.stockoutWeekIdx ?? (criticalSort.direction === 'asc' ? 999 : -1);
+          break;
+        case 'relief':
+          valA = a.riskAssessment.reliefQty ?? 0;
+          valB = b.riskAssessment.reliefQty ?? 0;
+          break;
+        case 'postRelief':
+          valA = getPostReliefStatusLabel(a.riskAssessment, a.skuInfo.minSafetyStock);
+          valB = getPostReliefStatusLabel(b.riskAssessment, b.skuInfo.minSafetyStock);
+          break;
+        case 'action':
+          valA = a.riskAssessment.actionPlan;
+          valB = b.riskAssessment.actionPlan;
+          break;
+        default:
+          valA = a.riskAssessment.stockoutWeekIdx ?? 999;
+          valB = b.riskAssessment.stockoutWeekIdx ?? 999;
+      }
+      
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return criticalSort.direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+      }
+      
+      return criticalSort.direction === 'asc' ? valA - valB : valB - valA;
+    });
+  };
+
+  const getSortedCapitalData = () => {
+    const overStockData = data.filter(row => row.projections[0].isCapitalInefficiency);
+    
+    return overStockData.sort((a, b) => {
+      let valA: any = '';
+      let valB: any = '';
+      
+      const revA = reviews[a.skuInfo.sku] || { is_resolved: false, supervisor_check: false, planeador_check: false, director_vobo: false };
+      const revB = reviews[b.skuInfo.sku] || { is_resolved: false, supervisor_check: false, planeador_check: false, director_vobo: false };
+
+      const currentInvA = a.projections[0].inventoryWithReceipts;
+      const maxStockA = a.skuInfo.maxOptimalStock;
+      const overStockQtyA = Math.max(0, currentInvA - maxStockA);
+      const overStockValA = overStockQtyA * a.skuInfo.unitPrice;
+      const overStockPctA = maxStockA > 0 ? (overStockQtyA / maxStockA) * 100 : 0;
+
+      const currentInvB = b.projections[0].inventoryWithReceipts;
+      const maxStockB = b.skuInfo.maxOptimalStock;
+      const overStockQtyB = Math.max(0, currentInvB - maxStockB);
+      const overStockValB = overStockQtyB * b.skuInfo.unitPrice;
+      const overStockPctB = maxStockB > 0 ? (overStockQtyB / maxStockB) * 100 : 0;
+
+      switch (capitalSort.key) {
+        case 'resolved':
+          valA = (revA.supervisor_check ? 1 : 0) + (revA.planeador_check ? 1 : 0) + (revA.director_vobo ? 1 : 0);
+          valB = (revB.supervisor_check ? 1 : 0) + (revB.planeador_check ? 1 : 0) + (revB.director_vobo ? 1 : 0);
+          break;
+        case 'sku':
+          valA = a.skuInfo.sku;
+          valB = b.skuInfo.sku;
+          break;
+        case 'category':
+          valA = a.skuInfo.category;
+          valB = b.skuInfo.category;
+          break;
+        case 'supplier':
+          valA = a.skuInfo.supplier;
+          valB = b.skuInfo.supplier;
+          break;
+        case 'unitPrice':
+          valA = a.skuInfo.unitPrice;
+          valB = b.skuInfo.unitPrice;
+          break;
+        case 'moq':
+          valA = a.skuInfo.moq;
+          valB = b.skuInfo.moq;
+          break;
+        case 'maxStock':
+          valA = maxStockA;
+          valB = maxStockB;
+          break;
+        case 'currentInv':
+          valA = currentInvA;
+          valB = currentInvB;
+          break;
+        case 'overStockQty':
+          valA = overStockQtyA;
+          valB = overStockQtyB;
+          break;
+        case 'overStockPct':
+          valA = overStockPctA;
+          valB = overStockPctB;
+          break;
+        case 'overStockVal':
+          valA = overStockValA;
+          valB = overStockValB;
+          break;
+        default:
+          valA = overStockValA;
+          valB = overStockValB;
+      }
+      
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return capitalSort.direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+      }
+      
+      return capitalSort.direction === 'asc' ? valA - valB : valB - valA;
+    });
+  };
+
   const fetchReviews = async () => {
       const { data, error } = await supabase.from('sku_reviews')
         .select('sku_id, is_resolved, comment, supervisor_check, planeador_check, director_vobo')
@@ -291,23 +467,21 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
             <table className={styles.table} style={{ position: 'relative' }}>
               <thead style={{ position: 'sticky', top: 0, background: 'var(--background)', zIndex: 1, boxShadow: '0 1px 0 var(--panel-border)' }}>
                 <tr>
-                  <th>Validaciones</th>
-                  <th>SKU</th>
-                  <th>Categoría</th>
-                  <th>Proveedor</th>
-                  <th>Lead Time</th>
-                  <th>Ruptura (Mínimo)</th>
-                  <th>Ruptura (Paro Planta)</th>
-                  <th>Alivio Proyectado</th>
-                  <th>Estatus Post-Alivio</th>
-                  <th>Acción Sugerida (Rol S&OP)</th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCritical('resolved')}>Validaciones {renderSortIcon('critical', 'resolved')}</th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCritical('sku')}>SKU {renderSortIcon('critical', 'sku')}</th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCritical('category')}>Categoría {renderSortIcon('critical', 'category')}</th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCritical('supplier')}>Proveedor {renderSortIcon('critical', 'supplier')}</th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCritical('leadTime')}>Lead Time {renderSortIcon('critical', 'leadTime')}</th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCritical('minDeficit')}>Ruptura (Mínimo) {renderSortIcon('critical', 'minDeficit')}</th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCritical('stockout')}>Ruptura (Paro Planta) {renderSortIcon('critical', 'stockout')}</th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCritical('relief')}>Alivio Proyectado {renderSortIcon('critical', 'relief')}</th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCritical('postRelief')}>Estatus Post-Alivio {renderSortIcon('critical', 'postRelief')}</th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCritical('action')}>Acción Sugerida (Rol S&OP) {renderSortIcon('critical', 'action')}</th>
                   <th>Detalles / Comentarios</th>
                 </tr>
               </thead>
               <tbody>
-                {data
-                  .filter(row => row.riskAssessment.isCriticalRisk)
-                  .sort((a, b) => (a.riskAssessment.stockoutWeekIdx ?? 99) - (b.riskAssessment.stockoutWeekIdx ?? 99) || (b.riskAssessment.minDeficitQty || 0) - (a.riskAssessment.minDeficitQty || 0))
+                {getSortedCriticalData()
                   .map(row => {
                   const ra = row.riskAssessment;
                   const review = reviews[row.skuInfo.sku] || { is_resolved: false, comment: '', supervisor_check: false, planeador_check: false, director_vobo: false };
@@ -462,29 +636,23 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
             <table className={styles.table} style={{ position: 'relative' }}>
               <thead style={{ position: 'sticky', top: 0, background: 'var(--background)', zIndex: 1, boxShadow: '0 1px 0 var(--panel-border)' }}>
                 <tr>
-                  <th>Validaciones</th>
-                  <th>SKU</th>
-                  <th>Categoría</th>
-                  <th>Proveedor</th>
-                  <th>Precio Unitario Compra</th>
-                  <th>MOQ</th>
-                  <th>Cantidad máxima permitida de stock</th>
-                  <th>Cantidad actual de inventario</th>
-                  <th>Cantidad de sobre stock</th>
-                  <th>% Excedente</th>
-                  <th>Valor de sobre stock</th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCapital('resolved')}>Validaciones {renderSortIcon('capital', 'resolved')}</th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCapital('sku')}>SKU {renderSortIcon('capital', 'sku')}</th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCapital('category')}>Categoría {renderSortIcon('capital', 'category')}</th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCapital('supplier')}>Proveedor {renderSortIcon('capital', 'supplier')}</th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCapital('unitPrice')}>Precio Unitario Compra {renderSortIcon('capital', 'unitPrice')}</th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCapital('moq')}>MOQ {renderSortIcon('capital', 'moq')}</th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCapital('maxStock')}>Cantidad máxima permitida de stock {renderSortIcon('capital', 'maxStock')}</th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCapital('currentInv')}>Cantidad actual de inventario {renderSortIcon('capital', 'currentInv')}</th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCapital('overStockQty')}>Cantidad de sobre stock {renderSortIcon('capital', 'overStockQty')}</th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCapital('overStockPct')}>% Excedente {renderSortIcon('capital', 'overStockPct')}</th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCapital('overStockVal')}>Valor de sobre stock {renderSortIcon('capital', 'overStockVal')}</th>
                   <th>Estatus</th>
                   <th>Detalle / Comentarios</th>
                 </tr>
               </thead>
               <tbody>
-                {data
-                  .filter(row => row.projections[0].isCapitalInefficiency)
-                  .sort((a, b) => {
-                    const valA = (a.projections[0].inventoryWithReceipts - a.skuInfo.maxOptimalStock) * a.skuInfo.unitPrice;
-                    const valB = (b.projections[0].inventoryWithReceipts - b.skuInfo.maxOptimalStock) * b.skuInfo.unitPrice;
-                    return valB - valA;
-                  })
+                {getSortedCapitalData()
                   .map(row => {
                     const review = reviews[row.skuInfo.sku] || { is_resolved: false, comment: '', supervisor_check: false, planeador_check: false, director_vobo: false };
                     
