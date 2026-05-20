@@ -359,7 +359,8 @@ export default function AuthWrapper({ children, sidebar, headerTitle, selectedCo
       <div className="mainWrapper" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         <header style={{ 
             height: '60px', borderBottom: '1px solid var(--panel-border)', background: 'var(--panel-bg)',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.5rem', zIndex: 10
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1.5rem', 
+            position: 'relative', zIndex: 9999
         }}>
           <div style={{ fontSize: '1.25rem', fontWeight: 600 }}>{headerTitle}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
