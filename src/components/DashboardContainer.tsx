@@ -137,14 +137,19 @@ export default function DashboardContainer({ data, companyId }: DashboardContain
           
         if (insertError) throw insertError;
 
-        // 4. Delete all current reviews (Borrón y cuenta nueva)
-        const { error: deleteError } = await supabase
+        // 4. Reset only validations (is_resolved, checks), keeping comments (Borrón y cuenta nueva de validaciones)
+        const { error: updateError } = await supabase
           .from('sku_reviews')
-          .delete()
-          .eq('company_id', companyId)
-          .not('sku_id', 'is', null); // Delete all for this company
+          .update({
+            is_resolved: false,
+            supervisor_check: false,
+            planeador_check: false,
+            director_vobo: false,
+            resolved_by_user_id: null
+          })
+          .eq('company_id', companyId);
 
-        if (deleteError) throw deleteError;
+        if (updateError) throw updateError;
       }
 
       // 4.5 Backup AI Diagnosis
