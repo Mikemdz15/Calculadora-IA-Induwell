@@ -32,10 +32,17 @@ export default function MultiSelect({ options, selected, onChange, placeholder, 
     if (forceSolo) {
       onChange([option]);
     } else {
-      if (selected.includes(option)) {
-        onChange(selected.filter(item => item !== option));
+      // Excel-like behavior: If all options were selected, and there is a search term active,
+      // and they toggle an option, we assume they want to deselect everything else and only work within the filtered set.
+      if (selected.length === options.length && cleanSearch) {
+        const otherFiltered = filteredOptions.filter(item => item !== option);
+        onChange(otherFiltered);
       } else {
-        onChange([...selected, option]);
+        if (selected.includes(option)) {
+          onChange(selected.filter(item => item !== option));
+        } else {
+          onChange([...selected, option]);
+        }
       }
     }
   };
@@ -46,11 +53,16 @@ export default function MultiSelect({ options, selected, onChange, placeholder, 
   const selectAll = () => {
     if (cleanSearch) {
       const isAllFilteredSelected = filteredOptions.every(o => selected.includes(o));
-      if (isAllFilteredSelected) {
-        onChange(selected.filter(o => !filteredOptions.includes(o)));
+      if (selected.length === options.length) {
+        // If all are selected and they uncheck the filtered list, we clear everything to allow selecting only what they want
+        onChange([]);
       } else {
-        const newSelected = new Set([...selected, ...filteredOptions]);
-        onChange(Array.from(newSelected));
+        if (isAllFilteredSelected) {
+          onChange(selected.filter(o => !filteredOptions.includes(o)));
+        } else {
+          const newSelected = new Set([...selected, ...filteredOptions]);
+          onChange(Array.from(newSelected));
+        }
       }
     } else {
       if (selected.length === options.length) {
