@@ -200,12 +200,13 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
         'Categoría': row.skuInfo.category,
         'Proveedor': row.skuInfo.supplier,
         'Precio Unitario Compra': row.skuInfo.unitPrice,
-        'Cantidad máxima permitida de stock': maxStock,
-        'Cantidad actual de inventario': currentInv,
-        'Cantidad de sobre stock': overStockQty,
+        'MOQ': Math.round(row.skuInfo.moq),
+        'Cantidad máxima permitida de stock': Math.round(maxStock),
+        'Cantidad actual de inventario': Math.round(currentInv),
+        'Cantidad de sobre stock': Math.round(overStockQty),
         '% Excedente': `${overStockPct.toFixed(2)}%`,
-        'Valor de sobre stock': overStockVal,
-        'Estatus': 'Sobre inventario MOQ',
+        'Valor de sobre stock': Math.round(overStockVal),
+        'Estatus': 'Sobre Stock',
         'Detalle / Comentarios': review.comment
       };
     });
@@ -466,6 +467,7 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
                   <th>Categoría</th>
                   <th>Proveedor</th>
                   <th>Precio Unitario Compra</th>
+                  <th>MOQ</th>
                   <th>Cantidad máxima permitida de stock</th>
                   <th>Cantidad actual de inventario</th>
                   <th>Cantidad de sobre stock</th>
@@ -542,16 +544,15 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
                         <td style={{ fontWeight: 500 }}>{row.skuInfo.sku}</td>
                         <td>{row.skuInfo.category}</td>
                         <td>{row.skuInfo.supplier}</td>
-                        <td>${row.skuInfo.unitPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</td>
-                        <td>{maxStock.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                        <td style={{ color: 'var(--warning)', fontWeight: 500 }}>{currentInv.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                        <td style={{ color: 'var(--danger)', fontWeight: 'bold' }}>{overStockQty.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td>${row.skuInfo.unitPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td>{Math.round(row.skuInfo.moq).toLocaleString('en-US')}</td>
+                        <td>{Math.round(maxStock).toLocaleString('en-US')}</td>
+                        <td style={{ color: 'var(--warning)', fontWeight: 500 }}>{Math.round(currentInv).toLocaleString('en-US')}</td>
+                        <td style={{ color: 'var(--danger)', fontWeight: 'bold' }}>{Math.round(overStockQty).toLocaleString('en-US')}</td>
                         <td style={{ color: 'var(--warning)', fontWeight: 500 }}>{maxStock > 0 ? ((overStockQty / maxStock) * 100).toFixed(2) : '0.00'}%</td>
-                        <td style={{ color: 'var(--danger)', fontWeight: 'bold' }}>${overStockVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                        <td style={{ color: 'var(--danger)', fontWeight: 'bold' }}>${Math.round(overStockVal).toLocaleString('en-US')}</td>
                         <td>
-                          <span className="badge danger" style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-                            Sobre inventario MOQ
-                          </span>
+                          <span className="badge danger">Sobre Stock</span>
                         </td>
                         <td onClick={(e) => e.stopPropagation()}>
                           <button 
@@ -572,7 +573,7 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
                   })}
                 {data.filter(row => row.projections[0].isCapitalInefficiency).length === 0 && (
                   <tr>
-                    <td colSpan={11} style={{ textAlign: 'center', padding: '2rem', opacity: 0.5 }}>
+                    <td colSpan={13} style={{ textAlign: 'center', padding: '2rem', opacity: 0.5 }}>
                       No hay capital atrapado o sobre-stock registrado para esta selección
                     </td>
                   </tr>
