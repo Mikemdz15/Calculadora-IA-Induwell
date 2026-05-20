@@ -400,7 +400,8 @@ export default function AuthWrapper({ children, sidebar, headerTitle, selectedCo
                 <div style={{
                   position: 'absolute', top: '100%', right: 0, marginTop: '0.5rem', width: '300px',
                   background: 'var(--panel-bg)', border: '1px solid var(--panel-border)', borderRadius: '8px',
-                  boxShadow: '0 10px 25px rgba(0,0,0,0.2)', zIndex: 9999, maxHeight: '400px', display: 'flex', flexDirection: 'column'
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.2)', zIndex: 9999, maxHeight: '400px', display: 'flex', flexDirection: 'column',
+                  backdropFilter: 'blur(16px)'
                 }}>
                   <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--panel-border)', fontWeight: 600, fontSize: '0.9rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     Notificaciones
