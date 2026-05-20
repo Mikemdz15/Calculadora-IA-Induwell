@@ -36,7 +36,7 @@ export default function AuthWrapper({ children, sidebar, headerTitle, selectedCo
         supabase.removeChannel(channel);
       }
     }
-  }, [user, profile]);
+  }, [user, profile, selectedCompany]);
 
   const fetchNotifications = async () => {
     if (!profile || !selectedCompany) return;

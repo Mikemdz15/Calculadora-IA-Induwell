@@ -66,7 +66,8 @@ export default function NegotiationCommentsModal({ record, onClose, companyId }:
           target_buyer_name: record.buyer,
           message: `Nuevo comentario en tu partida ${record.sku}: "${newCommentStr.substring(0, 30)}..."`,
           reference_id: record.id,
-          reference_type: 'negociacion'
+          reference_type: 'negociacion',
+          company_id: companyId
         });
       }
 
