@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { X, Send, Clock, User, PackageOpen } from 'lucide-react';
+import { X, Send, Clock, User, PackageOpen, Pencil, Check } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/authContext';
 import { NegotiationRecord } from './NegotiationsPanel';
@@ -24,6 +24,25 @@ export default function NegotiationCommentsModal({ record, onClose, companyId }:
   const [comments, setComments] = useState<CommentHistory[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editingCommentText, setEditingCommentText] = useState('');
+
+  const handleSaveCommentEdit = async (commentId: string) => {
+    if (!editingCommentText.trim()) return;
+    try {
+      const { error } = await supabase
+        .from('comments_history')
+        .update({ comment: editingCommentText.trim() })
+        .eq('id', commentId);
+      
+      if (error) throw error;
+      setEditingCommentId(null);
+      fetchComments();
+    } catch (err) {
+      console.error(err);
+      alert("Error al editar el comentario");
+    }
+  };
 
   const fetchComments = async () => {
     setLoading(true);
@@ -137,21 +156,73 @@ export default function NegotiationCommentsModal({ record, onClose, companyId }:
             ) : comments.length === 0 ? (
               <div style={{ opacity: 0.5, textAlign: 'center', marginTop: '2rem' }}>No hay comentarios adicionales aún.</div>
             ) : (
-              comments.map(c => (
-                <div key={c.id} style={{ background: 'var(--panel-bg)', padding: '1rem', borderRadius: '6px', border: '1px solid var(--panel-border)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                    <span style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <User size={14} /> {c.user_name}
-                    </span>
-                    <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>
-                      {new Date(c.created_at).toLocaleString()}
-                    </span>
+              comments.map(c => {
+                const isEditing = editingCommentId === c.id;
+                const canEdit = profile?.role === 'director';
+
+                return (
+                  <div key={c.id} style={{ background: 'var(--panel-bg)', padding: '1rem', borderRadius: '6px', border: '1px solid var(--panel-border)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <User size={14} /> {c.user_name}
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>
+                          {new Date(c.created_at).toLocaleString()}
+                        </span>
+                        {!isEditing && canEdit && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingCommentId(c.id);
+                              setEditingCommentText(c.comment);
+                            }}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: '0.2rem', display: 'flex', alignItems: 'center' }}
+                            title="Editar comentario"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {isEditing ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+                        <textarea
+                          value={editingCommentText}
+                          onChange={(e) => setEditingCommentText(e.target.value)}
+                          style={{
+                            width: '100%', padding: '0.5rem', background: 'rgba(0,0,0,0.2)',
+                            border: '1px solid var(--panel-border)', borderRadius: '4px',
+                            color: 'white', resize: 'vertical', minHeight: '60px',
+                            fontFamily: 'inherit', fontSize: '0.9rem'
+                          }}
+                        />
+                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleSaveCommentEdit(c.id)}
+                            style={{ background: 'var(--success)', color: 'white', border: 'none', padding: '0.25rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                          >
+                            <Check size={14} /> Guardar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingCommentId(null)}
+                            style={{ background: 'transparent', color: 'var(--foreground)', border: '1px solid var(--panel-border)', padding: '0.25rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                          >
+                            <X size={14} /> Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '0.9rem', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                        {c.comment}
+                      </div>
+                    )}
                   </div>
-                  <div style={{ fontSize: '0.9rem', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
-                    {c.comment}
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 

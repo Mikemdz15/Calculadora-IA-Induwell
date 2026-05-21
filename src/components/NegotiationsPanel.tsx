@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
-import { PackageOpen, Check, Download, Plus, Save, X, Trash2, MessageSquare, ShieldCheck } from 'lucide-react';
+import { PackageOpen, Check, Download, Plus, Save, X, Trash2, MessageSquare, ShieldCheck, Pencil } from 'lucide-react';
 import styles from './DashboardOverview.module.css';
 import { SupplyChainRow } from '@/lib/supplyChainLogic';
 import { useAuth } from '@/lib/authContext';
@@ -44,6 +44,57 @@ export default function NegotiationsPanel({ data = [], companyId }: Negotiations
 
   const [isAdding, setIsAdding] = useState(false);
   const [selectedRecordForComments, setSelectedRecordForComments] = useState<NegotiationRecord | null>(null);
+
+  const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
+  const [editingRecordFields, setEditingRecordFields] = useState<Partial<NegotiationRecord>>({});
+
+  const handleStartEdit = (record: NegotiationRecord) => {
+    setEditingRecordId(record.id);
+    setEditingRecordFields({ ...record });
+  };
+
+  const handleEditSkuChange = (sku: string) => {
+    const skuInfo = data.find(d => d.skuInfo.sku === sku);
+    setEditingRecordFields(prev => ({
+      ...prev,
+      sku,
+      description: skuInfo ? skuInfo.skuInfo.description : prev.description,
+      supplier: skuInfo ? skuInfo.skuInfo.supplier : prev.supplier,
+      inventory_qty: skuInfo && skuInfo.projections[0] ? skuInfo.projections[0].inventoryWithReceipts : prev.inventory_qty,
+      weekly_avg_consumption: skuInfo && skuInfo.projections.length > 0 
+        ? Math.round(skuInfo.projections.reduce((sum, p) => sum + p.requiredMaterial, 0) / skuInfo.projections.length)
+        : prev.weekly_avg_consumption,
+    }));
+  };
+
+  const handleSaveEdit = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('partidas_negociacion')
+        .update({
+          buyer: editingRecordFields.buyer,
+          sku: editingRecordFields.sku,
+          description: editingRecordFields.description,
+          supplier: editingRecordFields.supplier,
+          inventory_qty: editingRecordFields.inventory_qty,
+          weekly_avg_consumption: editingRecordFields.weekly_avg_consumption,
+          previous_price: editingRecordFields.previous_price,
+          new_price: editingRecordFields.new_price,
+          currency: editingRecordFields.currency,
+          exchange_rate: editingRecordFields.exchange_rate,
+          submission_date: editingRecordFields.submission_date
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setEditingRecordId(null);
+      fetchRecords();
+    } catch (err) {
+      console.error(err);
+      alert("Error al actualizar la partida de negociación.");
+    }
+  };
 
   const [newRecord, setNewRecord] = useState<Partial<NegotiationRecord>>({
     buyer: profile?.full_name || 'Comprador',
@@ -491,6 +542,7 @@ export default function NegotiationsPanel({ data = [], companyId }: Negotiations
               const isChecked = r.director_check;
               const statusLabel = isChecked ? 'Cerrado' : 'Abierto';
               const days = calculateDays(r.submission_date);
+              const isEditing = editingRecordId === r.id;
               
               return (
                 <tr key={r.id} style={{ opacity: isChecked ? 0.7 : 1 }}>
@@ -549,39 +601,154 @@ export default function NegotiationsPanel({ data = [], companyId }: Negotiations
                       {statusLabel}
                     </span>
                   </td>
-                  <td>{r.buyer}</td>
-                  <td style={{ fontWeight: 600 }}>{r.sku}</td>
-                  <td style={{ maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={r.description}>{r.description}</td>
-                  <td>{r.supplier}</td>
-                  <td style={{ textAlign: 'right' }}>{r.inventory_qty?.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                  <td style={{ textAlign: 'right' }}>{r.weekly_avg_consumption?.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                  <td style={{ textAlign: 'center', fontWeight: 600, color: calculateScope(r.inventory_qty, r.weekly_avg_consumption) < 2 ? 'var(--danger)' : 'inherit' }}>
-                    {calculateScope(r.inventory_qty, r.weekly_avg_consumption).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                  <td>
+                    {isEditing ? (
+                      <input 
+                        type="text" 
+                        value={editingRecordFields.buyer || ''} 
+                        onChange={e => setEditingRecordFields(prev => ({ ...prev, buyer: e.target.value }))} 
+                        style={tableInputStyle} 
+                      />
+                    ) : r.buyer}
                   </td>
-                  <td style={{ textAlign: 'right' }}>${r.previous_price?.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                  <td style={{ textAlign: 'right', color: r.new_price > r.previous_price ? 'var(--danger)' : 'var(--success)' }}>${r.new_price?.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                  <td style={{ textAlign: 'center' }}>{r.currency || 'MXN'}</td>
-                  <td style={{ textAlign: 'center' }}>{r.currency === 'USD' ? (r.exchange_rate || 1).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-'}</td>
+                  <td style={{ fontWeight: 600 }}>
+                    {isEditing ? (
+                      <input 
+                        type="text" 
+                        list="unique-skus" 
+                        value={editingRecordFields.sku || ''} 
+                        onChange={e => handleEditSkuChange(e.target.value)} 
+                        style={tableInputStyle} 
+                      />
+                    ) : r.sku}
+                  </td>
+                  <td style={{ maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={isEditing ? editingRecordFields.description : r.description}>
+                    {isEditing ? (
+                      <input 
+                        type="text" 
+                        value={editingRecordFields.description || ''} 
+                        onChange={e => setEditingRecordFields(prev => ({ ...prev, description: e.target.value }))} 
+                        style={tableInputStyle} 
+                      />
+                    ) : r.description}
+                  </td>
+                  <td>
+                    {isEditing ? (
+                      <input 
+                        type="text" 
+                        list="unique-suppliers" 
+                        value={editingRecordFields.supplier || ''} 
+                        onChange={e => setEditingRecordFields(prev => ({ ...prev, supplier: e.target.value }))} 
+                        style={tableInputStyle} 
+                      />
+                    ) : r.supplier}
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    {isEditing ? (
+                      <input 
+                        type="number" 
+                        value={editingRecordFields.inventory_qty ?? ''} 
+                        onChange={e => setEditingRecordFields(prev => ({ ...prev, inventory_qty: Number(e.target.value) }))} 
+                        style={tableInputStyle} 
+                      />
+                    ) : r.inventory_qty?.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    {isEditing ? (
+                      <input 
+                        type="number" 
+                        value={editingRecordFields.weekly_avg_consumption ?? ''} 
+                        onChange={e => setEditingRecordFields(prev => ({ ...prev, weekly_avg_consumption: Number(e.target.value) }))} 
+                        style={tableInputStyle} 
+                      />
+                    ) : r.weekly_avg_consumption?.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                  </td>
+                  <td style={{ textAlign: 'center', fontWeight: 600, color: (isEditing ? calculateScope(editingRecordFields.inventory_qty || 0, editingRecordFields.weekly_avg_consumption || 0) : calculateScope(r.inventory_qty, r.weekly_avg_consumption)) < 2 ? 'var(--danger)' : 'inherit' }}>
+                    {isEditing 
+                      ? calculateScope(editingRecordFields.inventory_qty || 0, editingRecordFields.weekly_avg_consumption || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})
+                      : calculateScope(r.inventory_qty, r.weekly_avg_consumption).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    {isEditing ? (
+                      <input 
+                        type="number" 
+                        step="0.01" 
+                        value={editingRecordFields.previous_price ?? ''} 
+                        onChange={e => setEditingRecordFields(prev => ({ ...prev, previous_price: Number(e.target.value) }))} 
+                        style={tableInputStyle} 
+                      />
+                    ) : `$${r.previous_price?.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`}
+                  </td>
+                  <td style={{ textAlign: 'right', color: (isEditing ? (editingRecordFields.new_price || 0) > (editingRecordFields.previous_price || 0) : r.new_price > r.previous_price) ? 'var(--danger)' : 'var(--success)' }}>
+                    {isEditing ? (
+                      <input 
+                        type="number" 
+                        step="0.01" 
+                        value={editingRecordFields.new_price ?? ''} 
+                        onChange={e => setEditingRecordFields(prev => ({ ...prev, new_price: Number(e.target.value) }))} 
+                        style={tableInputStyle} 
+                      />
+                    ) : `$${r.new_price?.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`}
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    {isEditing ? (
+                      <select 
+                        value={editingRecordFields.currency || 'MXN'} 
+                        onChange={e => setEditingRecordFields(prev => ({ ...prev, currency: e.target.value as 'MXN' | 'USD', exchange_rate: e.target.value === 'MXN' ? 1 : prev.exchange_rate }))} 
+                        style={tableInputStyle}
+                      >
+                        <option value="MXN">MXN</option>
+                        <option value="USD">USD</option>
+                      </select>
+                    ) : (r.currency || 'MXN')}
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    {isEditing ? (
+                      <input 
+                        type="number" 
+                        step="0.01" 
+                        disabled={editingRecordFields.currency === 'MXN'} 
+                        value={editingRecordFields.currency === 'MXN' ? '' : (editingRecordFields.exchange_rate ?? '')} 
+                        onChange={e => setEditingRecordFields(prev => ({ ...prev, exchange_rate: Number(e.target.value) }))} 
+                        style={tableInputStyle} 
+                      />
+                    ) : (r.currency === 'USD' ? (r.exchange_rate || 1).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '-')}
+                  </td>
                   <td style={{ textAlign: 'right', fontWeight: 600 }}>
-                    ${(r.new_price * (r.exchange_rate || 1)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                    {isEditing 
+                      ? `$${((editingRecordFields.new_price || 0) * (editingRecordFields.exchange_rate || 1)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
+                      : `$${(r.new_price * (r.exchange_rate || 1)).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`}
                   </td>
                   <td style={{ textAlign: 'center', fontWeight: 600 }}>
-                    <span style={{ color: r.new_price > r.previous_price ? 'var(--danger)' : 'var(--success)' }}>
-                      {calculateIncrease(r.previous_price, r.new_price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%
+                    <span style={{ color: (isEditing ? (editingRecordFields.new_price || 0) > (editingRecordFields.previous_price || 0) : r.new_price > r.previous_price) ? 'var(--danger)' : 'var(--success)' }}>
+                      {isEditing 
+                        ? `${calculateIncrease(editingRecordFields.previous_price || 0, editingRecordFields.new_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%`
+                        : `${calculateIncrease(r.previous_price, r.new_price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}%`}
                     </span>
                   </td>
-                  <td>{r.submission_date}</td>
-                  <td style={{ textAlign: 'center', fontWeight: 600, color: !isChecked && days > 3 ? 'var(--danger)' : 'inherit' }}>
-                    {isChecked ? '-' : days}
+                  <td>
+                    {isEditing ? (
+                      <input 
+                        type="date" 
+                        value={editingRecordFields.submission_date || ''} 
+                        onChange={e => setEditingRecordFields(prev => ({ ...prev, submission_date: e.target.value }))} 
+                        style={tableInputStyle} 
+                      />
+                    ) : r.submission_date}
+                  </td>
+                  <td style={{ textAlign: 'center', fontWeight: 600, color: !isChecked && (isEditing ? calculateDays(editingRecordFields.submission_date || '') : days) > 3 ? 'var(--danger)' : 'inherit' }}>
+                    {isChecked ? '-' : (isEditing ? calculateDays(editingRecordFields.submission_date || '') : days)}
                   </td>
                   <td>
                     <button 
                       onClick={() => setSelectedRecordForComments(r)}
+                      disabled={isEditing}
                       style={{
                         display: 'flex', alignItems: 'center', gap: '0.5rem',
                         background: 'rgba(255,255,255,0.05)', border: '1px solid var(--panel-border)',
                         padding: '0.4rem 0.6rem', borderRadius: '4px', color: 'var(--foreground)',
-                        cursor: 'pointer', fontSize: '0.8rem', whiteSpace: 'nowrap'
+                        cursor: isEditing ? 'not-allowed' : 'pointer', fontSize: '0.8rem', whiteSpace: 'nowrap',
+                        opacity: isEditing ? 0.5 : 1
                       }}
                     >
                       <MessageSquare size={14} />
@@ -590,27 +757,45 @@ export default function NegotiationsPanel({ data = [], companyId }: Negotiations
                   </td>
                   <td style={{ textAlign: 'center' }}>
                     {profile?.role === 'director' && (
-                      <button 
-                        onClick={() => handleDelete(r.id)}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: 'var(--danger)',
-                          cursor: 'pointer',
-                          padding: '0.2rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          opacity: 0.8
-                        }}
-                        title="Eliminar partida permanentemente"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      isEditing ? (
+                        <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'center' }}>
+                          <button 
+                            onClick={() => handleSaveEdit(r.id)}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--success)', cursor: 'pointer', padding: '0.2rem', display: 'flex', alignItems: 'center' }}
+                            title="Guardar cambios"
+                          >
+                            <Check size={16} />
+                          </button>
+                          <button 
+                            onClick={() => setEditingRecordId(null)}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--foreground)', cursor: 'pointer', padding: '0.2rem', opacity: 0.8, display: 'flex', alignItems: 'center' }}
+                            title="Cancelar"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center' }}>
+                          <button 
+                            onClick={() => handleStartEdit(r)}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: '0.2rem', display: 'flex', alignItems: 'center' }}
+                            title="Editar partida"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          <button 
+                            onClick={() => handleDelete(r.id)}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '0.2rem', display: 'flex', alignItems: 'center', opacity: 0.8 }}
+                            title="Eliminar partida permanentemente"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      )
                     )}
                   </td>
                 </tr>
-              )
+              );
             })}
           </tbody>
         </table>
@@ -626,6 +811,18 @@ export default function NegotiationsPanel({ data = [], companyId }: Negotiations
     </div>
   );
 }
+
+const tableInputStyle = {
+  background: 'rgba(0,0,0,0.5)',
+  color: 'white',
+  border: '1px solid var(--panel-border)',
+  padding: '0.2rem 0.3rem',
+  width: '100%',
+  borderRadius: '4px',
+  fontSize: '0.8rem',
+  outline: 'none',
+  boxSizing: 'border-box' as const
+};
 
 const inputStyle = {
   background: 'var(--background)',
