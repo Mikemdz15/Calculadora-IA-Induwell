@@ -20,6 +20,7 @@ export default function AiDiagnosticPanel({ currentWeekId, data, companyId }: Ai
 
   const [userRole, setUserRole] = useState<'Admin' | 'Usuario'>('Admin');
   const [isExpanded, setIsExpanded] = useState(true);
+  const [isDiagnosisCollapsed, setIsDiagnosisCollapsed] = useState(false);
 
   // Fetch existing diagnosis for this week
   useEffect(() => {
@@ -193,14 +194,43 @@ export default function AiDiagnosticPanel({ currentWeekId, data, companyId }: Ai
               lineHeight: '1.6',
               fontSize: '0.95rem'
             }}>
-              {/* Usamos Markdown rendering simple - we will style it globally or via inline if needed */}
-              <div className="markdown-body" style={{ color: 'var(--foreground)' }}>
-                <ReactMarkdown>{diagnosis}</ReactMarkdown>
-              </div>
+              {isDiagnosisCollapsed && (
+                <div 
+                  onClick={() => setIsDiagnosisCollapsed(false)}
+                  style={{ 
+                    opacity: 0.8, 
+                    fontStyle: 'italic', 
+                    padding: '1rem', 
+                    background: 'rgba(168, 85, 247, 0.05)', 
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    borderLeft: '4px solid #a855f7',
+                    marginBottom: '1rem'
+                  }}
+                >
+                  El resumen clínico se encuentra comprimido para facilitar la navegación. Haz clic aquí o en el botón de abajo para expandirlo.
+                </div>
+              )}
+
+              {!isDiagnosisCollapsed && (
+                <div className="markdown-body" style={{ color: 'var(--foreground)' }}>
+                  <ReactMarkdown>{diagnosis}</ReactMarkdown>
+                </div>
+              )}
               
-              <div style={{ marginTop: '1rem', textAlign: 'right' }}>
-                {userRole === 'Admin' && (
-                   <button 
+              <div style={{ 
+                marginTop: '1.5rem', 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                borderTop: '1px solid rgba(168, 85, 247, 0.15)', 
+                paddingTop: '1rem',
+                flexWrap: 'wrap',
+                gap: '1rem'
+              }}>
+                <div>
+                  {userRole === 'Admin' && (
+                    <button 
                       onClick={generateDiagnosis}
                       disabled={isLoading}
                       style={{
@@ -215,7 +245,39 @@ export default function AiDiagnosticPanel({ currentWeekId, data, companyId }: Ai
                     >
                       {isLoading ? 'Actualizando...' : 'Regenerar (Actualizar con nuevos comentarios)'}
                     </button>
-                )}
+                  )}
+                </div>
+
+                <button
+                  onClick={() => setIsDiagnosisCollapsed(!isDiagnosisCollapsed)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    background: 'rgba(168, 85, 247, 0.1)',
+                    color: '#a855f7',
+                    border: '1px solid rgba(168, 85, 247, 0.3)',
+                    padding: '0.4rem 1rem',
+                    borderRadius: 'var(--radius-sm)',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    transition: 'all 0.2s'
+                  }}
+                  title={isDiagnosisCollapsed ? "Expandir Resumen" : "Comprimir Resumen"}
+                >
+                  {isDiagnosisCollapsed ? (
+                    <>
+                      <span>Expandir Resumen Clínico</span>
+                      <ChevronDown size={16} />
+                    </>
+                  ) : (
+                    <>
+                      <span>Comprimir Resumen Clínico</span>
+                      <ChevronUp size={16} />
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           ) : (
