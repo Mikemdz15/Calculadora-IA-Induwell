@@ -3,6 +3,7 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import styles from './SupplyChainMatrix.module.css';
 import { SupplyChainRow } from '@/lib/supplyChainLogic';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface SupplyChainMatrixProps {
   data: SupplyChainRow[];
@@ -13,6 +14,7 @@ export default function SupplyChainMatrix({ data }: SupplyChainMatrixProps) {
   const bottomScrollRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLTableElement>(null);
   const [tableWidth, setTableWidth] = useState(2500);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Sync scrollbars
   const handleTopScroll = () => {
@@ -41,10 +43,18 @@ export default function SupplyChainMatrix({ data }: SupplyChainMatrixProps) {
   return (
     <div id="matriz" style={{ marginTop: '3rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <h2>Matriz de Abasto (N a N+5) <span style={{fontSize: '1rem', opacity: 0.7, fontWeight: 'normal'}}>({data.length} SKUs)</span></h2>
+        <h2 
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, cursor: 'pointer', userSelect: 'none' }}
+          title={isCollapsed ? "Expandir matriz" : "Comprimir matriz"}
+        >
+          Matriz de Abasto (N a N+5) <span style={{fontSize: '1rem', opacity: 0.7, fontWeight: 'normal'}}>({data.length} SKUs)</span>
+          {isCollapsed ? <ChevronDown size={20} style={{ opacity: 0.6 }} /> : <ChevronUp size={20} style={{ opacity: 0.6 }} />}
+        </h2>
       </div>
       
-      <div className={styles.wrapper}>
+      {!isCollapsed && (
+        <div className={styles.wrapper}>
         {/* Top Horizontal Scrollbar */}
         <div className={styles.topScroll} ref={topScrollRef} onScroll={handleTopScroll}>
           <div className={styles.topScrollInner} style={{ width: tableWidth }}></div>
@@ -141,6 +151,7 @@ export default function SupplyChainMatrix({ data }: SupplyChainMatrixProps) {
           </table>
         </div>
       </div>
+      )}
     </div>
   );
 }

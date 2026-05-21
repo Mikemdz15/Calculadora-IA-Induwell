@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
-import { PackageOpen, Check, Download, Plus, Save, X, Trash2, MessageSquare, ShieldCheck, Pencil } from 'lucide-react';
+import { PackageOpen, Check, Download, Plus, Save, X, Trash2, MessageSquare, ShieldCheck, Pencil, ChevronDown, ChevronUp } from 'lucide-react';
 import styles from './DashboardOverview.module.css';
 import { SupplyChainRow } from '@/lib/supplyChainLogic';
 import { useAuth } from '@/lib/authContext';
@@ -43,6 +43,7 @@ export default function NegotiationsPanel({ data = [], companyId }: Negotiations
   });
 
   const [isAdding, setIsAdding] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [selectedRecordForComments, setSelectedRecordForComments] = useState<NegotiationRecord | null>(null);
 
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
@@ -368,9 +369,14 @@ export default function NegotiationsPanel({ data = [], companyId }: Negotiations
   return (
     <div id="negociaciones" style={{ marginBottom: '3rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <h2 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+        <h2 
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, cursor: 'pointer', userSelect: 'none' }}
+          title={isCollapsed ? "Expandir panel" : "Comprimir panel"}
+        >
           <PackageOpen size={24} color="var(--primary)" />
           Partidas en Negociación ({records.length})
+          {isCollapsed ? <ChevronDown size={18} style={{ opacity: 0.6 }} /> : <ChevronUp size={18} style={{ opacity: 0.6 }} />}
         </h2>
         
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -431,7 +437,8 @@ export default function NegotiationsPanel({ data = [], companyId }: Negotiations
         </div>
       </div>
 
-      <div className="card" style={{ overflowX: 'auto' }}>
+      {!isCollapsed && (
+        <div className="card" style={{ overflowX: 'auto' }}>
         {isAdding && (
           <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: 'var(--radius-sm)', marginBottom: '1.5rem', border: '1px dashed var(--panel-border)' }}>
             <h4 style={{ margin: '0 0 1rem 0' }}>Registrar Nueva Negociación</h4>
@@ -800,6 +807,7 @@ export default function NegotiationsPanel({ data = [], companyId }: Negotiations
           </tbody>
         </table>
       </div>
+      )}
 
       {selectedRecordForComments && (
         <NegotiationCommentsModal 

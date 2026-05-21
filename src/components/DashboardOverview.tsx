@@ -5,7 +5,7 @@ import styles from './DashboardOverview.module.css';
 import { AlertCircle, DollarSign, TrendingDown, PackageOpen } from 'lucide-react';
 import { SupplyChainRow, calculateKPIs, GlobalRiskAssessment } from '@/lib/supplyChainLogic';
 import { supabase } from '@/lib/supabase';
-import { Check, Download, MessageSquare, ShieldCheck } from 'lucide-react';
+import { Check, Download, MessageSquare, ShieldCheck, ChevronDown, ChevronUp } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAuth } from '@/lib/authContext';
 import SkuDetailModal from './SkuDetailModal';
@@ -45,6 +45,9 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
     key: 'overStockVal',
     direction: 'desc',
   });
+
+  const [isCriticalCollapsed, setIsCriticalCollapsed] = useState(false);
+  const [isCapitalCollapsed, setIsCapitalCollapsed] = useState(false);
 
   const handleSortCritical = (key: string) => {
     setCriticalSort(prev => ({
@@ -442,9 +445,14 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
       <div style={{ marginTop: '2rem' }}>
         <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
-            <h3 style={{ fontSize: '1.1rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <h3 
+              onClick={() => setIsCriticalCollapsed(!isCriticalCollapsed)}
+              style={{ fontSize: '1.1rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', userSelect: 'none' }}
+              title={isCriticalCollapsed ? "Expandir tabla" : "Comprimir tabla"}
+            >
               <AlertCircle size={18} className={styles.dangerText} />
               Materiales Críticos (Riesgo Futuro y Alivio) <span style={{fontSize: '0.9rem', opacity: 0.7, fontWeight: 'normal'}}>({data.filter(row => row.riskAssessment.isCriticalRisk).length} SKUs)</span>
+              {isCriticalCollapsed ? <ChevronDown size={16} style={{ opacity: 0.6 }} /> : <ChevronUp size={16} style={{ opacity: 0.6 }} />}
             </h3>
             <button 
               onClick={exportToExcel}
@@ -463,8 +471,9 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
             </button>
           </div>
           
-          <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '400px' }}>
-            <table className={styles.table} style={{ position: 'relative' }}>
+          {!isCriticalCollapsed && (
+            <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '400px' }}>
+              <table className={styles.table} style={{ position: 'relative' }}>
               <thead style={{ position: 'sticky', top: 0, background: 'var(--background)', zIndex: 1, boxShadow: '0 1px 0 var(--panel-border)' }}>
                 <tr>
                   <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCritical('resolved')}>Validaciones {renderSortIcon('critical', 'resolved')}</th>
@@ -604,6 +613,7 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
             </tbody>
           </table>
           </div>
+          )}
         </div>
       </div>
 
@@ -611,9 +621,14 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
       <div style={{ marginTop: '2rem' }}>
         <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
-            <h3 style={{ fontSize: '1.1rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <h3 
+              onClick={() => setIsCapitalCollapsed(!isCapitalCollapsed)}
+              style={{ fontSize: '1.1rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', userSelect: 'none' }}
+              title={isCapitalCollapsed ? "Expandir tabla" : "Comprimir tabla"}
+            >
               <DollarSign size={18} className={styles.warningText} />
               Capital Atrapado (Sobre-stock) <span style={{fontSize: '0.9rem', opacity: 0.7, fontWeight: 'normal'}}>({data.filter(row => row.projections[0].isCapitalInefficiency).length} SKUs)</span>
+              {isCapitalCollapsed ? <ChevronDown size={16} style={{ opacity: 0.6 }} /> : <ChevronUp size={16} style={{ opacity: 0.6 }} />}
             </h3>
             <button 
               onClick={exportOverStockToExcel}
@@ -632,8 +647,9 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
             </button>
           </div>
           
-          <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '400px' }}>
-            <table className={styles.table} style={{ position: 'relative' }}>
+          {!isCapitalCollapsed && (
+            <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '400px' }}>
+              <table className={styles.table} style={{ position: 'relative' }}>
               <thead style={{ position: 'sticky', top: 0, background: 'var(--background)', zIndex: 1, boxShadow: '0 1px 0 var(--panel-border)' }}>
                 <tr>
                   <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCapital('resolved')}>Validaciones {renderSortIcon('capital', 'resolved')}</th>
@@ -748,7 +764,8 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
                 )}
               </tbody>
             </table>
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
