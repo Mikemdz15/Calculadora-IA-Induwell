@@ -49,6 +49,118 @@ export default function NegotiationsPanel({ data = [], companyId }: Negotiations
   const [editingRecordId, setEditingRecordId] = useState<string | null>(null);
   const [editingRecordFields, setEditingRecordFields] = useState<Partial<NegotiationRecord>>({});
 
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' }>({
+    key: 'submission_date',
+    direction: 'desc',
+  });
+
+  const handleSort = (key: string) => {
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const renderSortIcon = (key: string) => {
+    if (sortConfig.key !== key) return <span style={{ opacity: 0.3, marginLeft: '0.25rem' }}>↕</span>;
+    return sortConfig.direction === 'asc' 
+      ? <span style={{ marginLeft: '0.25rem', color: 'var(--primary)', fontSize: '0.75rem' }}>▲</span> 
+      : <span style={{ marginLeft: '0.25rem', color: 'var(--primary)', fontSize: '0.75rem' }}>▼</span>;
+  };
+
+  const sortedRecords = useMemo(() => {
+    const list = [...records];
+    if (!sortConfig.key) return list;
+
+    return list.sort((a, b) => {
+      let valA: any = '';
+      let valB: any = '';
+
+      switch (sortConfig.key) {
+        case 'validations':
+          valA = (a.supervisor_check ? 1 : 0) + (a.planeador_check ? 1 : 0) + (a.director_check ? 1 : 0);
+          valB = (b.supervisor_check ? 1 : 0) + (b.planeador_check ? 1 : 0) + (b.director_check ? 1 : 0);
+          break;
+        case 'status':
+          valA = a.director_check ? 1 : 0;
+          valB = b.director_check ? 1 : 0;
+          break;
+        case 'buyer':
+          valA = a.buyer || '';
+          valB = b.buyer || '';
+          break;
+        case 'sku':
+          valA = a.sku || '';
+          valB = b.sku || '';
+          break;
+        case 'description':
+          valA = a.description || '';
+          valB = b.description || '';
+          break;
+        case 'supplier':
+          valA = a.supplier || '';
+          valB = b.supplier || '';
+          break;
+        case 'inventory_qty':
+          valA = a.inventory_qty ?? 0;
+          valB = b.inventory_qty ?? 0;
+          break;
+        case 'weekly_avg_consumption':
+          valA = a.weekly_avg_consumption ?? 0;
+          valB = b.weekly_avg_consumption ?? 0;
+          break;
+        case 'scope':
+          valA = calculateScope(a.inventory_qty, a.weekly_avg_consumption);
+          valB = calculateScope(b.inventory_qty, b.weekly_avg_consumption);
+          break;
+        case 'previous_price':
+          valA = a.previous_price ?? 0;
+          valB = b.previous_price ?? 0;
+          break;
+        case 'new_price':
+          valA = a.new_price ?? 0;
+          valB = b.new_price ?? 0;
+          break;
+        case 'currency':
+          valA = a.currency || 'MXN';
+          valB = b.currency || 'MXN';
+          break;
+        case 'exchange_rate':
+          valA = a.exchange_rate ?? 1;
+          valB = b.exchange_rate ?? 1;
+          break;
+        case 'nationalPrice':
+          valA = (a.new_price || 0) * (a.exchange_rate || 1);
+          valB = (b.new_price || 0) * (b.exchange_rate || 1);
+          break;
+        case 'increase':
+          valA = calculateIncrease(a.previous_price, a.new_price);
+          valB = calculateIncrease(b.previous_price, b.new_price);
+          break;
+        case 'submission_date':
+          valA = a.submission_date || '';
+          valB = b.submission_date || '';
+          break;
+        case 'daysWithoutVobo':
+          valA = a.director_check ? -1 : calculateDays(a.submission_date);
+          valB = b.director_check ? -1 : calculateDays(b.submission_date);
+          break;
+        default:
+          break;
+      }
+
+      if (typeof valA === 'string' && typeof valB === 'string') {
+        return sortConfig.direction === 'asc' 
+          ? valA.localeCompare(valB) 
+          : valB.localeCompare(valA);
+      } else {
+        return sortConfig.direction === 'asc' 
+          ? (valA > valB ? 1 : valA < valB ? -1 : 0) 
+          : (valB > valA ? 1 : valB < valA ? -1 : 0);
+      }
+    });
+  }, [records, sortConfig]);
+
   const handleStartEdit = (record: NegotiationRecord) => {
     setEditingRecordId(record.id);
     setEditingRecordFields({ ...record });
@@ -519,23 +631,23 @@ export default function NegotiationsPanel({ data = [], companyId }: Negotiations
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>Validaciones</th>
-              <th>Estatus</th>
-              <th>Comprador</th>
-              <th>SKU</th>
-              <th>Descripción</th>
-              <th>Proveedor</th>
-              <th>Inv.</th>
-              <th>Consumo</th>
-              <th>Alcance<br/>(Sem)</th>
-              <th>Precio<br/>Ant.</th>
-              <th>Precio<br/>Nvo.</th>
-              <th>Moneda</th>
-              <th>T.C.</th>
-              <th>Precio Nvo.<br/>M.N.</th>
-              <th>Incr.<br/>(%)</th>
-              <th>Fecha a<br/>Contraloría</th>
-              <th>Días sin<br/>VoBo</th>
+              <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('validations')}>Validaciones {renderSortIcon('validations')}</th>
+              <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('status')}>Estatus {renderSortIcon('status')}</th>
+              <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('buyer')}>Comprador {renderSortIcon('buyer')}</th>
+              <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('sku')}>SKU {renderSortIcon('sku')}</th>
+              <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('description')}>Descripción {renderSortIcon('description')}</th>
+              <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('supplier')}>Proveedor {renderSortIcon('supplier')}</th>
+              <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('inventory_qty')}>Inv. {renderSortIcon('inventory_qty')}</th>
+              <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('weekly_avg_consumption')}>Consumo {renderSortIcon('weekly_avg_consumption')}</th>
+              <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('scope')}>Alcance<br/>(Sem) {renderSortIcon('scope')}</th>
+              <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('previous_price')}>Precio<br/>Ant. {renderSortIcon('previous_price')}</th>
+              <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('new_price')}>Precio<br/>Nvo. {renderSortIcon('new_price')}</th>
+              <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('currency')}>Moneda {renderSortIcon('currency')}</th>
+              <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('exchange_rate')}>T.C. {renderSortIcon('exchange_rate')}</th>
+              <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('nationalPrice')}>Precio Nvo.<br/>M.N. {renderSortIcon('nationalPrice')}</th>
+              <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('increase')}>Incr.<br/>(%) {renderSortIcon('increase')}</th>
+              <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('submission_date')}>Fecha a<br/>Contraloría {renderSortIcon('submission_date')}</th>
+              <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('daysWithoutVobo')}>Días sin<br/>VoBo {renderSortIcon('daysWithoutVobo')}</th>
               <th>Comentarios</th>
               <th></th>
             </tr>
@@ -543,9 +655,9 @@ export default function NegotiationsPanel({ data = [], companyId }: Negotiations
           <tbody>
             {isLoading ? (
               <tr><td colSpan={19} style={{ textAlign: 'center', padding: '2rem' }}>Cargando partidas...</td></tr>
-            ) : records.length === 0 ? (
+            ) : sortedRecords.length === 0 ? (
               <tr><td colSpan={19} style={{ textAlign: 'center', padding: '2rem', opacity: 0.5 }}>No hay negociaciones registradas para este mes.</td></tr>
-            ) : records.map(r => {
+            ) : sortedRecords.map(r => {
               const isChecked = r.director_check;
               const statusLabel = isChecked ? 'Cerrado' : 'Abierto';
               const days = calculateDays(r.submission_date);
