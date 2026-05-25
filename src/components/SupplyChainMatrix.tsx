@@ -3,7 +3,7 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import styles from './SupplyChainMatrix.module.css';
 import { SupplyChainRow } from '@/lib/supplyChainLogic';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Database } from 'lucide-react';
 
 interface SupplyChainMatrixProps {
   data: SupplyChainRow[];
@@ -42,19 +42,21 @@ export default function SupplyChainMatrix({ data }: SupplyChainMatrixProps) {
 
   return (
     <div id="matriz" style={{ marginTop: '3rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <h2 
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, cursor: 'pointer', userSelect: 'none' }}
-          title={isCollapsed ? "Expandir matriz" : "Comprimir matriz"}
-        >
-          Matriz de Abasto (N a N+5) <span style={{fontSize: '1rem', opacity: 0.7, fontWeight: 'normal'}}>({data.length} SKUs)</span>
-          {isCollapsed ? <ChevronDown size={20} style={{ opacity: 0.6 }} /> : <ChevronUp size={20} style={{ opacity: 0.6 }} />}
-        </h2>
-      </div>
-      
-      {!isCollapsed && (
-        <div className={styles.wrapper}>
+      <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <h3 
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            style={{ fontSize: '1.1rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', userSelect: 'none' }}
+            title={isCollapsed ? "Expandir matriz" : "Comprimir matriz"}
+          >
+            <Database size={18} color="var(--primary)" />
+            Matriz de Abasto (N a N+5) <span style={{fontSize: '0.9rem', opacity: 0.7, fontWeight: 'normal'}}>({data.length} SKUs)</span>
+            {isCollapsed ? <ChevronDown size={16} style={{ opacity: 0.6 }} /> : <ChevronUp size={16} style={{ opacity: 0.6 }} />}
+          </h3>
+        </div>
+        
+        {!isCollapsed && (
+          <div className={styles.wrapper}>
         {/* Top Horizontal Scrollbar */}
         <div className={styles.topScroll} ref={topScrollRef} onScroll={handleTopScroll}>
           <div className={styles.topScrollInner} style={{ width: tableWidth }}></div>
@@ -152,6 +154,7 @@ export default function SupplyChainMatrix({ data }: SupplyChainMatrixProps) {
         </div>
       </div>
       )}
+      </div>
     </div>
   );
 }

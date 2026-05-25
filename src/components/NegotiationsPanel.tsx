@@ -480,77 +480,78 @@ export default function NegotiationsPanel({ data = [], companyId }: Negotiations
 
   return (
     <div id="negociaciones" style={{ marginBottom: '3rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-        <h2 
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, cursor: 'pointer', userSelect: 'none' }}
-          title={isCollapsed ? "Expandir panel" : "Comprimir panel"}
-        >
-          <PackageOpen size={24} color="var(--primary)" />
-          Partidas en Negociación ({records.length})
-          {isCollapsed ? <ChevronDown size={18} style={{ opacity: 0.6 }} /> : <ChevronUp size={18} style={{ opacity: 0.6 }} />}
-        </h2>
-        
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <select 
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            style={{
-              background: 'var(--panel-bg)',
-              color: 'var(--foreground)',
-              border: '1px solid var(--panel-border)',
-              padding: '0.4rem 0.8rem',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.85rem'
-            }}
+      <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+          <h3 
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            style={{ fontSize: '1.1rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', userSelect: 'none' }}
+            title={isCollapsed ? "Expandir panel" : "Comprimir panel"}
           >
-            {monthOptions.map(m => (
-              <option key={m} value={m}>Mes Histórico: {m}</option>
-            ))}
-          </select>
-
-          <button 
-            onClick={exportToExcel}
-            style={{
-              background: 'transparent',
-              color: 'var(--primary)',
-              border: '1px solid var(--primary)',
-              padding: '0.4rem 1rem',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.85rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}
-          >
-            <Download size={16} /> Exportar CSV
-          </button>
+            <PackageOpen size={18} color="var(--primary)" />
+            Partidas en Negociación ({records.length})
+            {isCollapsed ? <ChevronDown size={16} style={{ opacity: 0.6 }} /> : <ChevronUp size={16} style={{ opacity: 0.6 }} />}
+          </h3>
           
-          <button 
-            onClick={() => setIsAdding(!isAdding)}
-            style={{
-              background: 'var(--primary)',
-              color: 'white',
-              border: 'none',
-              padding: '0.4rem 1rem',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.85rem',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              fontWeight: 600
-            }}
-          >
-            {isAdding ? <X size={16} /> : <Plus size={16} />} 
-            {isAdding ? 'Cancelar' : 'Nueva Partida'}
-          </button>
-        </div>
-      </div>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <select 
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              style={{
+                background: 'var(--panel-bg)',
+                color: 'var(--foreground)',
+                border: '1px solid var(--panel-border)',
+                padding: '0.4rem 0.8rem',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '0.85rem'
+              }}
+            >
+              {monthOptions.map(m => (
+                <option key={m} value={m}>Mes Histórico: {m}</option>
+              ))}
+            </select>
 
-      {!isCollapsed && (
-        <div className="card" style={{ overflowX: 'auto' }}>
+            <button 
+              onClick={exportToExcel}
+              style={{
+                background: 'transparent',
+                color: 'var(--primary)',
+                border: '1px solid var(--primary)',
+                padding: '0.4rem 1rem',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}
+            >
+              <Download size={16} /> Exportar CSV
+            </button>
+            
+            <button 
+              onClick={() => setIsAdding(!isAdding)}
+              style={{
+                background: 'var(--primary)',
+                color: 'white',
+                border: 'none',
+                padding: '0.4rem 1rem',
+                borderRadius: 'var(--radius-sm)',
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                fontWeight: 600
+              }}
+            >
+              {isAdding ? <X size={16} /> : <Plus size={16} />} 
+              {isAdding ? 'Cancelar' : 'Nueva Partida'}
+            </button>
+          </div>
+        </div>
+
+        {!isCollapsed && (
+          <div style={{ overflowX: 'auto' }}>
         {isAdding && (
           <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: 'var(--radius-sm)', marginBottom: '1.5rem', border: '1px dashed var(--panel-border)' }}>
             <h4 style={{ margin: '0 0 1rem 0' }}>Registrar Nueva Negociación</h4>
@@ -920,6 +921,7 @@ export default function NegotiationsPanel({ data = [], companyId }: Negotiations
         </table>
       </div>
       )}
+      </div>
 
       {selectedRecordForComments && (
         <NegotiationCommentsModal 
