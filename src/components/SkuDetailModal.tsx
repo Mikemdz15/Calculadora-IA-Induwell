@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { X, Send, Clock, User, AlertCircle, Pencil, Check } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Send, Clock, User, AlertCircle, Pencil, Check, Paperclip, FileSpreadsheet, FileText, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/authContext';
 import { SupplyChainRow } from '@/lib/supplyChainLogic';
@@ -12,6 +12,8 @@ interface CommentHistory {
   user_name: string;
   comment: string;
   created_at: string;
+  file_url?: string;
+  file_name?: string;
 }
 
 interface SkuDetailModalProps {
@@ -27,6 +29,25 @@ export default function SkuDetailModal({ skuData, onClose, companyId }: SkuDetai
   const [loading, setLoading] = useState(true);
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingCommentText, setEditingCommentText] = useState('');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isImage = (filename: string) => {
+    const ext = filename.split('.').pop()?.toLowerCase();
+    return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext || '');
+  };
+
+  const isExcel = (filename: string) => {
+    const ext = filename.split('.').pop()?.toLowerCase();
+    return ['xlsx', 'xls', 'csv'].includes(ext || '');
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
 
   const handleSaveCommentEdit = async (commentId: string) => {
     if (!editingCommentText.trim()) return;
@@ -69,38 +90,70 @@ export default function SkuDetailModal({ skuData, onClose, companyId }: SkuDetai
 
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newComment.trim() || !profile) return;
+    if ((!newComment.trim() && !selectedFile) || !profile) return;
 
-    const newCommentStr = newComment.trim();
-    const { error } = await supabase.from('comments_history').insert({
-      reference_id: skuData.skuInfo.sku,
-      reference_type: 'sku_review',
-      user_id: profile.id,
-      user_name: profile.full_name,
-      comment: newCommentStr,
-      company_id: companyId
-    });
+    setUploading(true);
+    let fileUrl = null;
+    let fileName = null;
 
-    if (!error) {
-      // Notify other participants in the thread
-      const otherCommenters = Array.from(new Set(comments.map(c => c.user_name)))
-        .filter(name => name !== profile.full_name);
-      
-      for (const commenterName of otherCommenters) {
-        await supabase.from('notifications').insert({
-          target_buyer_name: commenterName,
-          message: `${profile.full_name} comentó en el SKU ${skuData.skuInfo.sku}: "${newCommentStr.substring(0, 30)}..."`,
-          reference_id: skuData.skuInfo.sku,
-          reference_type: 'sku_review',
-          company_id: companyId
-        });
+    try {
+      if (selectedFile) {
+        const cleanFileName = selectedFile.name.replace(/[^\w\s.-]/gi, '').replace(/\s+/g, '_');
+        const filePath = `skus/${skuData.skuInfo.sku}/${Date.now()}_${cleanFileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('attachments')
+          .upload(filePath, selectedFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('attachments')
+          .getPublicUrl(filePath);
+
+        fileUrl = publicUrl;
+        fileName = selectedFile.name;
       }
 
-      setNewComment('');
-      fetchComments();
-    } else {
-      console.error(error);
-      alert('Error agregando comentario');
+      const commentText = newComment.trim() || `Adjuntó un archivo: ${fileName}`;
+
+      const { error } = await supabase.from('comments_history').insert({
+        reference_id: skuData.skuInfo.sku,
+        reference_type: 'sku_review',
+        user_id: profile.id,
+        user_name: profile.full_name,
+        comment: commentText,
+        company_id: companyId,
+        file_url: fileUrl,
+        file_name: fileName
+      });
+
+      if (!error) {
+        // Notify other participants in the thread
+        const otherCommenters = Array.from(new Set(comments.map(c => c.user_name)))
+          .filter(name => name !== profile.full_name);
+        
+        for (const commenterName of otherCommenters) {
+          await supabase.from('notifications').insert({
+            target_buyer_name: commenterName,
+            message: `${profile.full_name} comentó en el SKU ${skuData.skuInfo.sku}: "${commentText.substring(0, 30)}..."`,
+            reference_id: skuData.skuInfo.sku,
+            reference_type: 'sku_review',
+            company_id: companyId
+          });
+        }
+
+        setNewComment('');
+        setSelectedFile(null);
+        fetchComments();
+      } else {
+        throw error;
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert('Error agregando comentario: ' + (err.message || err));
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -271,8 +324,68 @@ export default function SkuDetailModal({ skuData, onClose, companyId }: SkuDetai
                           </div>
                         </div>
                       ) : (
-                        <div style={{ fontSize: '0.9rem', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
-                          {c.comment}
+                        <div>
+                          <div style={{ fontSize: '0.9rem', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                            {c.comment}
+                          </div>
+                          {c.file_url && (
+                            <div style={{ marginTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0.75rem' }}>
+                              {isImage(c.file_name || '') ? (
+                                <div style={{ position: 'relative', display: 'inline-block' }}>
+                                  <a href={c.file_url} target="_blank" rel="noopener noreferrer" title="Ver imagen a tamaño completo">
+                                    <img 
+                                      src={c.file_url} 
+                                      alt={c.file_name} 
+                                      style={{ 
+                                        maxWidth: '100%', 
+                                        maxHeight: '180px', 
+                                        borderRadius: '6px', 
+                                        border: '1px solid var(--panel-border)',
+                                        cursor: 'pointer',
+                                        transition: 'transform 0.2s',
+                                      }}
+                                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                    />
+                                  </a>
+                                  <div style={{ fontSize: '0.75rem', opacity: 0.6, marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    <ImageIcon size={12} /> {c.file_name}
+                                  </div>
+                                </div>
+                              ) : (
+                                <a 
+                                  href={c.file_url} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.75rem',
+                                    background: isExcel(c.file_name || '') ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255,255,255,0.05)',
+                                    border: `1px solid ${isExcel(c.file_name || '') ? 'rgba(34, 197, 94, 0.3)' : 'var(--panel-border)'}`,
+                                    padding: '0.6rem 1rem',
+                                    borderRadius: '6px',
+                                    textDecoration: 'none',
+                                    color: 'white',
+                                    fontSize: '0.85rem',
+                                    transition: 'background 0.2s'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.background = isExcel(c.file_name || '') ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255,255,255,0.1)'}
+                                  onMouseLeave={(e) => e.currentTarget.style.background = isExcel(c.file_name || '') ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255,255,255,0.05)'}
+                                >
+                                  {isExcel(c.file_name || '') ? (
+                                    <FileSpreadsheet size={20} style={{ color: '#22c55e' }} />
+                                  ) : (
+                                    <FileText size={20} style={{ color: 'var(--primary)' }} />
+                                  )}
+                                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <span style={{ fontWeight: 500, textDecoration: 'underline' }}>{c.file_name}</span>
+                                    <span style={{ fontSize: '0.7rem', opacity: 0.6 }}>Haga clic para descargar evidencia</span>
+                                  </div>
+                                </a>
+                              )}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -282,33 +395,139 @@ export default function SkuDetailModal({ skuData, onClose, companyId }: SkuDetai
             </div>
 
             {/* Comment Input */}
-            <form onSubmit={handleAddComment} style={{ marginTop: '1rem', position: 'relative' }}>
-              <textarea 
-                value={newComment}
-                onChange={e => setNewComment(e.target.value)}
-                placeholder="Escribe un nuevo comentario..."
-                required
-                style={{ 
-                  width: '100%', padding: '0.75rem', paddingRight: '3rem', 
-                  background: 'rgba(255,255,255,0.05)', border: '1px solid var(--panel-border)', 
-                  borderRadius: '6px', color: 'white', resize: 'none', height: '80px',
-                  fontFamily: 'inherit'
-                }}
-              />
-              <button 
-                type="submit"
-                disabled={!newComment.trim()}
-                style={{
-                  position: 'absolute', right: '0.5rem', bottom: '1rem',
-                  background: 'var(--primary)', color: 'white', border: 'none',
-                  width: '32px', height: '32px', borderRadius: '4px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: newComment.trim() ? 'pointer' : 'not-allowed',
-                  opacity: newComment.trim() ? 1 : 0.5
-                }}
-              >
-                <Send size={16} />
-              </button>
+            <form onSubmit={handleAddComment} style={{ marginTop: '1rem' }}>
+              {selectedFile && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid var(--panel-border)',
+                  borderBottom: 'none',
+                  padding: '0.5rem 0.75rem',
+                  borderTopLeftRadius: '6px',
+                  borderTopRightRadius: '6px',
+                  fontSize: '0.85rem'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)' }}>
+                    {isExcel(selectedFile.name) ? (
+                      <FileSpreadsheet size={16} style={{ color: '#22c55e' }} />
+                    ) : isImage(selectedFile.name) ? (
+                      <ImageIcon size={16} />
+                    ) : (
+                      <FileText size={16} />
+                    )}
+                    <span style={{ maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 500 }}>
+                      {selectedFile.name}
+                    </span>
+                    <span style={{ fontSize: '0.75rem', opacity: 0.5 }}>
+                      ({(selectedFile.size / 1024).toFixed(1)} KB)
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedFile(null)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--danger)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '0.2rem'
+                    }}
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              )}
+
+              <div style={{ position: 'relative', display: 'flex', flexDirection: 'column' }}>
+                <textarea 
+                  value={newComment}
+                  onChange={e => setNewComment(e.target.value)}
+                  placeholder={selectedFile ? "Añadir una descripción al archivo (opcional)..." : "Escribe un nuevo comentario..."}
+                  style={{ 
+                    width: '100%', 
+                    padding: '0.75rem', 
+                    paddingRight: '6rem', 
+                    background: 'rgba(255,255,255,0.05)', 
+                    border: '1px solid var(--panel-border)', 
+                    borderTopLeftRadius: selectedFile ? '0' : '6px',
+                    borderTopRightRadius: selectedFile ? '0' : '6px',
+                    borderBottomLeftRadius: '6px',
+                    borderBottomRightRadius: '6px',
+                    color: 'white', 
+                    resize: 'none', 
+                    height: '80px',
+                    fontFamily: 'inherit',
+                    outline: 'none'
+                  }}
+                />
+                
+                <div style={{
+                  position: 'absolute',
+                  right: '0.75rem',
+                  bottom: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                  <input 
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    style={{ display: 'none' }}
+                  />
+
+                  <button 
+                    type="button"
+                    disabled={uploading}
+                    onClick={() => fileInputRef.current?.click()}
+                    style={{
+                      background: selectedFile ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255,255,255,0.05)',
+                      color: selectedFile ? '#22c55e' : 'var(--foreground)',
+                      border: `1px solid ${selectedFile ? 'rgba(34, 197, 94, 0.4)' : 'var(--panel-border)'}`,
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                    title="Adjuntar evidencia (Excel, Imagen, Captura)"
+                  >
+                    <Paperclip size={16} />
+                  </button>
+
+                  <button 
+                    type="submit"
+                    disabled={(!newComment.trim() && !selectedFile) || uploading}
+                    style={{
+                      background: 'var(--primary)',
+                      color: 'white',
+                      border: 'none',
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: (newComment.trim() || selectedFile) && !uploading ? 'pointer' : 'not-allowed',
+                      opacity: (newComment.trim() || selectedFile) && !uploading ? 1 : 0.5,
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    {uploading ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                      <Send size={16} />
+                    )}
+                  </button>
+                </div>
+              </div>
             </form>
           </div>
         </div>
