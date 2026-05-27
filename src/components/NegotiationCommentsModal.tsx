@@ -30,6 +30,8 @@ export default function NegotiationCommentsModal({ record, onClose, companyId }:
   const [editingCommentText, setEditingCommentText] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [fullscreenImageUrl, setFullscreenImageUrl] = useState<string | null>(null);
+  const [fullscreenImageName, setFullscreenImageName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isImage = (filename: string) => {
@@ -277,7 +279,14 @@ export default function NegotiationCommentsModal({ record, onClose, companyId }:
                           <div style={{ marginTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0.75rem' }}>
                             {isImage(c.file_name || '') ? (
                               <div style={{ position: 'relative', display: 'inline-block' }}>
-                                <a href={c.file_url} target="_blank" rel="noopener noreferrer" title="Ver imagen a tamaño completo">
+                                <div 
+                                  onClick={() => {
+                                    setFullscreenImageUrl(c.file_url || null);
+                                    setFullscreenImageName(c.file_name || null);
+                                  }}
+                                  title="Ver evidencia a tamaño completo"
+                                  style={{ cursor: 'zoom-in' }}
+                                >
                                   <img 
                                     src={c.file_url} 
                                     alt={c.file_name} 
@@ -286,13 +295,12 @@ export default function NegotiationCommentsModal({ record, onClose, companyId }:
                                       maxHeight: '180px', 
                                       borderRadius: '6px', 
                                       border: '1px solid var(--panel-border)',
-                                      cursor: 'pointer',
                                       transition: 'transform 0.2s',
                                     }}
                                     onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
                                     onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
                                   />
-                                </a>
+                                </div>
                                 <div style={{ fontSize: '0.75rem', opacity: 0.6, marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                                   <ImageIcon size={12} /> {c.file_name}
                                 </div>
@@ -476,6 +484,83 @@ export default function NegotiationCommentsModal({ record, onClose, companyId }:
           </form>
         </div>
       </div>
+      
+      {/* Fullscreen Image Lightbox Modal */}
+      {fullscreenImageUrl && (
+        <div 
+          onClick={() => setFullscreenImageUrl(null)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            cursor: 'zoom-out'
+          }}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'relative',
+              maxWidth: '90%',
+              maxHeight: '90%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              background: 'var(--panel-bg)',
+              border: '1px solid var(--panel-border)',
+              borderRadius: '8px',
+              padding: '1rem',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)'
+            }}
+          >
+            <button
+              onClick={() => setFullscreenImageUrl(null)}
+              style={{
+                position: 'absolute',
+                top: '-1rem',
+                right: '-1rem',
+                background: 'rgba(255,255,255,0.1)',
+                border: 'none',
+                color: 'white',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'background 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+            >
+              <X size={18} />
+            </button>
+            <img 
+              src={fullscreenImageUrl} 
+              alt={fullscreenImageName || 'Evidencia'} 
+              style={{ 
+                maxWidth: '100%', 
+                maxHeight: 'calc(80vh - 40px)', 
+                borderRadius: '4px',
+                objectFit: 'contain'
+              }}
+            />
+            {fullscreenImageName && (
+              <div style={{ marginTop: '0.75rem', color: 'white', fontSize: '0.85rem', fontWeight: 500, opacity: 0.8 }}>
+                {fullscreenImageName}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
