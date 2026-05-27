@@ -551,7 +551,7 @@ export default function NegotiationsPanel({ data = [], companyId }: Negotiations
         </div>
 
         {!isCollapsed && (
-          <div style={{ overflowX: 'auto' }}>
+          <div>
         {isAdding && (
           <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: 'var(--radius-sm)', marginBottom: '1.5rem', border: '1px dashed var(--panel-border)' }}>
             <h4 style={{ margin: '0 0 1rem 0' }}>Registrar Nueva Negociación</h4>
@@ -629,7 +629,16 @@ export default function NegotiationsPanel({ data = [], companyId }: Negotiations
           </div>
         )}
 
-        <table className={styles.table}>
+        <div style={{ 
+          maxHeight: '410px', 
+          overflowY: 'auto', 
+          overflowX: 'auto',
+          scrollbarWidth: 'thin',
+          border: '1px solid var(--panel-border)',
+          borderRadius: 'var(--radius-sm)',
+          marginTop: '1rem'
+        }}>
+          <table className={styles.table} style={{ marginTop: 0 }}>
           <thead>
             <tr>
               <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSort('validations')}>Validaciones {renderSortIcon('validations')}</th>
@@ -918,7 +927,8 @@ export default function NegotiationsPanel({ data = [], companyId }: Negotiations
               );
             })}
           </tbody>
-        </table>
+          </table>
+        </div>
       </div>
       )}
       </div>
