@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import styles from './DashboardOverview.module.css';
 import { AlertCircle, DollarSign, TrendingDown, PackageOpen } from 'lucide-react';
 import { SupplyChainRow, calculateKPIs, GlobalRiskAssessment } from '@/lib/supplyChainLogic';
@@ -303,6 +303,26 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
 
   const kpis = calculateKPIs(data);
 
+  // Dynamic calculations for Director VoBo approved items
+  const approvedRiskSkusCount = useMemo(() => {
+    return data.filter(row => {
+      if (!row.riskAssessment.isCriticalRisk) return false;
+      const sku = row.skuInfo.sku;
+      return reviews[sku]?.director_vobo === true;
+    }).length;
+  }, [data, reviews]);
+
+  const approvedBomberazosCount = useMemo(() => {
+    return data.filter(row => {
+      if (!(row.projections[0].toBuyBomberazo > 0)) return false;
+      const sku = row.skuInfo.sku;
+      return reviews[sku]?.director_vobo === true;
+    }).length;
+  }, [data, reviews]);
+
+  const riskCompliancePct = kpis.skusAtRisk > 0 ? (approvedRiskSkusCount / kpis.skusAtRisk) * 100 : 0;
+  const bomberazosCompliancePct = kpis.bomberazosCount > 0 ? (approvedBomberazosCount / kpis.bomberazosCount) * 100 : 0;
+
   const exportToExcel = () => {
     const criticalData = data
       .filter(row => row.riskAssessment.isCriticalRisk)
@@ -420,6 +440,28 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
           <div className={styles.kpiSubtext}>
             {kpis.skusAtRisk} de {kpis.totalSkus} SKUs en riesgo inminente
           </div>
+          {/* Comentario dinámico de revisión de dirección */}
+          <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--panel-border)', fontSize: '0.85rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+              <span style={{ color: 'var(--foreground)', opacity: 0.8 }}>Revisión por Dirección:</span>
+              <span className={styles.successText} style={{ fontWeight: 'bold' }}>
+                {approvedRiskSkusCount} de {kpis.skusAtRisk}
+              </span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', opacity: 0.7, marginBottom: '0.5rem' }}>
+              <span>Cumplimiento y atención</span>
+              <span>{riskCompliancePct.toFixed(1)}%</span>
+            </div>
+            <div className={styles.progressBar}>
+              <div 
+                className={styles.progressFill} 
+                style={{ 
+                  width: `${riskCompliancePct}%`, 
+                  background: 'var(--success, #10b981)' 
+                }} 
+              />
+            </div>
+          </div>
         </div>
 
         <div className={`card ${styles.kpiCard}`}>
@@ -432,6 +474,28 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
           </div>
           <div className={styles.kpiSubtext}>
             Urgencias detectadas para cobertura inmediata
+          </div>
+          {/* Comentario dinámico de revisión de dirección */}
+          <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid var(--panel-border)', fontSize: '0.85rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+              <span style={{ color: 'var(--foreground)', opacity: 0.8 }}>Revisión por Dirección:</span>
+              <span className={styles.successText} style={{ fontWeight: 'bold' }}>
+                {approvedBomberazosCount} de {kpis.bomberazosCount}
+              </span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', opacity: 0.7, marginBottom: '0.5rem' }}>
+              <span>Cumplimiento y atención</span>
+              <span>{bomberazosCompliancePct.toFixed(1)}%</span>
+            </div>
+            <div className={styles.progressBar}>
+              <div 
+                className={styles.progressFill} 
+                style={{ 
+                  width: `${bomberazosCompliancePct}%`, 
+                  background: 'var(--success, #10b981)' 
+                }} 
+              />
+            </div>
           </div>
         </div>
 
