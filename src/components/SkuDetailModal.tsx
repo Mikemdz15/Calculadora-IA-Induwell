@@ -251,7 +251,7 @@ export default function SkuDetailModal({ skuData, onClose, companyId }: SkuDetai
             </div>
 
             <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Plan de Alivio</h3>
-            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '6px' }}>
+            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '6px', marginBottom: '1.5rem' }}>
               <div style={{ marginBottom: '0.5rem' }}>
                 <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>Alivio Esperado: </span>
                 {ra.reliefWeekIdx !== null ? (
@@ -265,6 +265,18 @@ export default function SkuDetailModal({ skuData, onClose, companyId }: SkuDetai
               <div>
                 <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>Estatus Post-Alivio: </span>
                 <span style={{ fontWeight: 500 }}>{getPostReliefStatusLabel(ra, skuData.skuInfo.minSafetyStock)}</span>
+              </div>
+            </div>
+
+            <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>Datos de Referencia</h3>
+            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '6px' }}>
+              <div style={{ marginBottom: '0.5rem' }}>
+                <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>MOQ (Pedido Mínimo): </span>
+                <span style={{ fontWeight: 500 }}>{Math.round(skuData.skuInfo.moq)?.toLocaleString() || 0} unidades</span>
+              </div>
+              <div>
+                <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>Precio de Compra Actual: </span>
+                <span style={{ fontWeight: 500 }}>${skuData.skuInfo.unitPrice?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             </div>
           </div>
