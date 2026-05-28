@@ -14,6 +14,7 @@ export interface NegotiationRecord {
   director_check: boolean;
   supervisor_check: boolean;
   planeador_check: boolean;
+  revision_check?: boolean;
   buyer: string;
   sku: string;
   description: string;
@@ -381,12 +382,13 @@ export default function NegotiationsPanel({ data = [], companyId }: Negotiations
     }
   };
 
-  const toggleCheck = async (id: string, field: 'supervisor_check' | 'planeador_check' | 'director_check', currentValue: boolean) => {
+  const toggleCheck = async (id: string, field: 'supervisor_check' | 'planeador_check' | 'director_check' | 'revision_check', currentValue: boolean) => {
     if (!profile) return;
     
     if (field === 'supervisor_check' && profile.role !== 'supervisor_planeador' && profile.role !== 'director') return;
     if (field === 'planeador_check' && profile.role !== 'supervisor_planeador' && profile.role !== 'director') return;
     if (field === 'director_check' && profile.role !== 'director') return;
+    if (field === 'revision_check' && profile.role !== 'director') return;
 
     try {
       setRecords(records.map(r => r.id === id ? { ...r, [field]: !currentValue } : r));
@@ -669,7 +671,8 @@ export default function NegotiationsPanel({ data = [], companyId }: Negotiations
               <tr><td colSpan={19} style={{ textAlign: 'center', padding: '2rem', opacity: 0.5 }}>No hay negociaciones registradas para este mes.</td></tr>
             ) : sortedRecords.map(r => {
               const isChecked = r.director_check;
-              const statusLabel = isChecked ? 'Cerrado' : 'Abierto';
+              const isRevision = !!r.revision_check;
+              const statusLabel = isChecked ? 'Cerrado' : (isRevision ? 'En Revisión' : 'Abierto');
               const days = calculateDays(r.submission_date);
               const isEditing = editingRecordId === r.id;
               
@@ -716,6 +719,19 @@ export default function NegotiationsPanel({ data = [], companyId }: Negotiations
                       >
                         {r.director_check ? <ShieldCheck size={14} /> : <span style={{ fontSize: '10px', opacity: 0.7, fontWeight: 'bold' }}>D</span>}
                       </button>
+                      <button 
+                        title="Revisión Director"
+                        disabled={profile?.role !== 'director'}
+                        onClick={() => toggleCheck(r.id, 'revision_check', !!r.revision_check)}
+                        style={{
+                          width: '24px', height: '24px', borderRadius: '4px', border: '1px solid var(--panel-border)',
+                          background: r.revision_check ? 'var(--danger)' : 'transparent', color: r.revision_check ? 'white' : 'var(--foreground)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          cursor: profile?.role === 'director' ? 'pointer' : 'not-allowed',
+                          opacity: profile?.role === 'director' ? 1 : 0.6
+                        }}
+                      >
+                        <span style={{ fontSize: '10px', fontWeight: 'bold', opacity: r.revision_check ? 1 : 0.7 }}>R</span>
+                      </button>
                     </div>
                   </td>
                   <td>
@@ -724,8 +740,12 @@ export default function NegotiationsPanel({ data = [], companyId }: Negotiations
                       borderRadius: '12px', 
                       fontSize: '0.75rem', 
                       fontWeight: 600,
-                      background: isChecked ? 'rgba(34, 197, 94, 0.2)' : 'rgba(234, 179, 8, 0.2)',
-                      color: isChecked ? 'var(--success)' : 'var(--warning)'
+                      background: isChecked 
+                        ? 'rgba(34, 197, 94, 0.2)' 
+                        : (isRevision ? 'rgba(239, 68, 68, 0.2)' : 'rgba(234, 179, 8, 0.2)'),
+                      color: isChecked 
+                        ? 'var(--success)' 
+                        : (isRevision ? 'var(--danger)' : 'var(--warning)')
                     }}>
                       {statusLabel}
                     </span>

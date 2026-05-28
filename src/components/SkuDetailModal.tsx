@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Send, Clock, User, AlertCircle, Pencil, Check, Paperclip, FileSpreadsheet, FileText, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { X, Send, Clock, User, AlertCircle, Pencil, Trash2, Check, Paperclip, FileSpreadsheet, FileText, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/authContext';
 import { SupplyChainRow } from '@/lib/supplyChainLogic';
@@ -65,6 +65,21 @@ export default function SkuDetailModal({ skuData, onClose, companyId }: SkuDetai
     } catch (err) {
       console.error(err);
       alert("Error al editar el comentario");
+    }
+  };
+  const handleDeleteComment = async (commentId: string) => {
+    if (!window.confirm("¿Estás seguro de que deseas eliminar este comentario permanentemente?")) return;
+    try {
+      const { error } = await supabase
+        .from('comments_history')
+        .delete()
+        .eq('id', commentId);
+      
+      if (error) throw error;
+      fetchComments();
+    } catch (err) {
+      console.error(err);
+      alert("Error al eliminar el comentario");
     }
   };
 
@@ -281,17 +296,27 @@ export default function SkuDetailModal({ skuData, onClose, companyId }: SkuDetai
                             {new Date(c.created_at).toLocaleString()}
                           </span>
                           {!isEditing && canEdit && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setEditingCommentId(c.id);
-                                setEditingCommentText(c.comment);
-                              }}
-                              style={{ background: 'transparent', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: '0.2rem', display: 'flex', alignItems: 'center' }}
-                              title="Editar comentario"
-                            >
-                              <Pencil size={14} />
-                            </button>
+                            <div style={{ display: 'flex', gap: '0.25rem' }}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingCommentId(c.id);
+                                  setEditingCommentText(c.comment);
+                                }}
+                                style={{ background: 'transparent', border: 'none', color: 'var(--primary)', cursor: 'pointer', padding: '0.2rem', display: 'flex', alignItems: 'center' }}
+                                title="Editar comentario"
+                              >
+                                <Pencil size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteComment(c.id)}
+                                style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '0.2rem', display: 'flex', alignItems: 'center', opacity: 0.8 }}
+                                title="Eliminar comentario permanentemente"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
                           )}
                         </div>
                       </div>

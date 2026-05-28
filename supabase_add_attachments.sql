@@ -26,3 +26,7 @@ DROP POLICY IF EXISTS "Permitir actualizar adjuntos" ON storage.objects;
 CREATE POLICY "Permitir actualizar adjuntos"
 ON storage.objects FOR UPDATE
 WITH CHECK (bucket_id = 'attachments');
+
+-- 4. Agregar columna revision_check a la tabla partidas_negociacion
+ALTER TABLE partidas_negociacion 
+ADD COLUMN IF NOT EXISTS revision_check BOOLEAN DEFAULT false;
