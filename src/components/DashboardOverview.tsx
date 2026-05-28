@@ -33,7 +33,7 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
   const [selectedSku, setSelectedSku] = useState<SupplyChainRow | null>(null);
   // Supabase State
   const [reviews, setReviews] = useState<Record<string, { 
-    is_resolved: boolean, comment: string, supervisor_check: boolean, planeador_check: boolean, director_vobo: boolean 
+    is_resolved: boolean, comment: string, supervisor_check: boolean, planeador_check: boolean, director_vobo: boolean, revision_check?: boolean
   }>>({});
 
   // Sorting states
@@ -217,7 +217,7 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
 
   const fetchReviews = async () => {
       const { data, error } = await supabase.from('sku_reviews')
-        .select('sku_id, is_resolved, comment, supervisor_check, planeador_check, director_vobo')
+        .select('sku_id, is_resolved, comment, supervisor_check, planeador_check, director_vobo, revision_check')
         .eq('company_id', companyId);
     if (data && !error) {
       const reviewMap: Record<string, any> = {};
@@ -227,7 +227,8 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
           comment: r.comment,
           supervisor_check: r.supervisor_check,
           planeador_check: r.planeador_check,
-          director_vobo: r.director_vobo
+          director_vobo: r.director_vobo,
+          revision_check: r.revision_check
         };
       });
       setReviews(reviewMap);
@@ -250,23 +251,24 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
     return () => window.removeEventListener('open-notification', handleOpenNotification);
   }, [data]);
 
-  const handleUpdateReview = async (sku: string, field: 'is_resolved' | 'comment' | 'supervisor_check' | 'planeador_check' | 'director_vobo', value: any) => {
+  const handleUpdateReview = async (sku: string, field: 'is_resolved' | 'comment' | 'supervisor_check' | 'planeador_check' | 'director_vobo' | 'revision_check', value: any) => {
     if (!profile) return;
     
     // Check permissions
     if (field === 'supervisor_check' && profile.role !== 'supervisor_planeador' && profile.role !== 'director') return;
     if (field === 'planeador_check' && profile.role !== 'supervisor_planeador' && profile.role !== 'director') return;
     if (field === 'director_vobo' && profile.role !== 'director') return;
+    if (field === 'revision_check' && profile.role !== 'director') return;
 
     setReviews(prev => ({
       ...prev,
       [sku]: {
-        ...(prev[sku] || { is_resolved: false, comment: '', supervisor_check: false, planeador_check: false, director_vobo: false }),
+        ...(prev[sku] || { is_resolved: false, comment: '', supervisor_check: false, planeador_check: false, director_vobo: false, revision_check: false }),
         [field]: value
       }
     }));
 
-    const current = reviews[sku] || { is_resolved: false, comment: '', supervisor_check: false, planeador_check: false, director_vobo: false };
+    const current = reviews[sku] || { is_resolved: false, comment: '', supervisor_check: false, planeador_check: false, director_vobo: false, revision_check: false };
     const payload = {
       sku_id: sku,
       is_resolved: field === 'is_resolved' ? value : current.is_resolved,
@@ -274,6 +276,7 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
       supervisor_check: field === 'supervisor_check' ? value : current.supervisor_check,
       planeador_check: field === 'planeador_check' ? value : current.planeador_check,
       director_vobo: field === 'director_vobo' ? value : current.director_vobo,
+      revision_check: field === 'revision_check' ? value : current.revision_check,
       resolved_by_user_id: profile.id,
       company_id: companyId,
       updated_at: new Date().toISOString()
@@ -309,7 +312,7 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
 
     const exportRows = criticalData.map(row => {
       const ra = row.riskAssessment;
-      const review = reviews[row.skuInfo.sku] || { is_resolved: false, comment: '' };
+      const review = reviews[row.skuInfo.sku] || { is_resolved: false, comment: '', supervisor_check: false, planeador_check: false, director_vobo: false, revision_check: false };
       
       const minDefW = ra.minDeficitWeekIdx;
       const minDefLabel = minDefW !== null 
@@ -331,6 +334,10 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
 
       return {
         'Resuelto': review.is_resolved ? 'Sí' : 'No',
+        'Supervisor check': review.supervisor_check ? 'Sí' : 'No',
+        'Planeador check': review.planeador_check ? 'Sí' : 'No',
+        'VoBo Director': review.director_vobo ? 'Sí' : 'No',
+        'Revisión Director': review.revision_check ? 'Sí' : 'No',
         'SKU': row.skuInfo.sku,
         'Categoría': row.skuInfo.category,
         'Proveedor': row.skuInfo.supplier,
@@ -363,7 +370,7 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
     if (overStockData.length === 0) return;
 
     const exportRows = overStockData.map(row => {
-      const review = reviews[row.skuInfo.sku] || { supervisor_check: false, planeador_check: false, director_vobo: false, comment: '' };
+      const review = reviews[row.skuInfo.sku] || { supervisor_check: false, planeador_check: false, director_vobo: false, revision_check: false, comment: '' };
       const currentInv = row.projections[0].inventoryWithReceipts;
       const maxStock = row.skuInfo.maxOptimalStock;
       const overStockQty = currentInv - maxStock;
@@ -375,6 +382,7 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
         'Supervisor check': review.supervisor_check ? 'Sí' : 'No',
         'Planeador check': review.planeador_check ? 'Sí' : 'No',
         'VoBo Director': review.director_vobo ? 'Sí' : 'No',
+        'Revisión Director': review.revision_check ? 'Sí' : 'No',
         'SKU': row.skuInfo.sku,
         'Categoría': row.skuInfo.category,
         'Proveedor': row.skuInfo.supplier,
@@ -529,7 +537,7 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
 
                   return (
                     <tr key={row.skuInfo.sku} style={{ opacity: review.director_vobo ? 0.7 : 1, transition: 'opacity 0.3s', cursor: 'pointer' }} onClick={() => setSelectedSku(row)}>
-                      <td onClick={(e) => e.stopPropagation()} style={{ minWidth: '140px' }}>
+                      <td onClick={(e) => e.stopPropagation()} style={{ minWidth: '165px' }}>
                         <div style={{ display: 'flex', gap: '0.25rem' }}>
                           <button 
                             title="Check Supervisor"
@@ -572,6 +580,20 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
                             }}
                           >
                             {review.director_vobo ? <ShieldCheck size={14} /> : <span style={{ fontSize: '10px', opacity: 0.7, fontWeight: 'bold' }}>D</span>}
+                          </button>
+                          <button 
+                            title="Revisión Director"
+                            disabled={profile?.role !== 'director'}
+                            onClick={() => handleUpdateReview(row.skuInfo.sku, 'revision_check', !review.revision_check)}
+                            style={{
+                              width: '24px', height: '24px', borderRadius: '4px', border: '1px solid var(--panel-border)',
+                              background: review.revision_check ? 'var(--danger)' : 'transparent',
+                              color: review.revision_check ? 'white' : 'var(--foreground)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              cursor: profile?.role === 'director' ? 'pointer' : 'not-allowed',
+                              opacity: profile?.role === 'director' ? 1 : 0.6
+                            }}
+                          >
+                            <span style={{ fontSize: '10px', fontWeight: 'bold', opacity: review.revision_check ? 1 : 0.7 }}>R</span>
                           </button>
                         </div>
                       </td>
@@ -679,7 +701,7 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
 
                     return (
                       <tr key={`overstock-${row.skuInfo.sku}`} style={{ opacity: review.director_vobo ? 0.7 : 1, transition: 'opacity 0.3s', cursor: 'pointer' }} onClick={() => setSelectedSku(row)}>
-                        <td onClick={(e) => e.stopPropagation()} style={{ minWidth: '140px' }}>
+                        <td onClick={(e) => e.stopPropagation()} style={{ minWidth: '165px' }}>
                           <div style={{ display: 'flex', gap: '0.25rem' }}>
                             <button 
                               title="Check Supervisor"
@@ -722,6 +744,20 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
                               }}
                             >
                               {review.director_vobo ? <ShieldCheck size={14} /> : <span style={{ fontSize: '10px', opacity: 0.7, fontWeight: 'bold' }}>D</span>}
+                            </button>
+                            <button 
+                              title="Revisión Director"
+                              disabled={profile?.role !== 'director'}
+                              onClick={() => handleUpdateReview(row.skuInfo.sku, 'revision_check', !review.revision_check)}
+                              style={{
+                                width: '24px', height: '24px', borderRadius: '4px', border: '1px solid var(--panel-border)',
+                                background: review.revision_check ? 'var(--danger)' : 'transparent',
+                                color: review.revision_check ? 'white' : 'var(--foreground)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: profile?.role === 'director' ? 'pointer' : 'not-allowed',
+                                opacity: profile?.role === 'director' ? 1 : 0.6
+                              }}
+                            >
+                              <span style={{ fontSize: '10px', fontWeight: 'bold', opacity: review.revision_check ? 1 : 0.7 }}>R</span>
                             </button>
                           </div>
                         </td>
