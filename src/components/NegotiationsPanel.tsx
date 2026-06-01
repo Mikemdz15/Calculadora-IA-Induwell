@@ -27,6 +27,7 @@ export interface NegotiationRecord {
   exchange_rate: number;
   submission_date: string;
   comments: string;
+  created_at?: string;
 }
 
 interface NegotiationsPanelProps {
@@ -273,15 +274,33 @@ export default function NegotiationsPanel({ data = [], companyId }: Negotiations
   const fetchRecords = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('partidas_negociacion')
-        .select('*')
-        .eq('month_id', selectedMonth)
-        .eq('company_id', companyId)
-        .order('created_at', { ascending: false });
+      const [currentMonthRes, openPreviousRes] = await Promise.all([
+        supabase
+          .from('partidas_negociacion')
+          .select('*')
+          .eq('month_id', selectedMonth)
+          .eq('company_id', companyId),
+        supabase
+          .from('partidas_negociacion')
+          .select('*')
+          .lt('month_id', selectedMonth)
+          .eq('director_check', false)
+          .eq('company_id', companyId)
+      ]);
         
-      if (error) throw error;
-      setRecords(data || []);
+      if (currentMonthRes.error) throw currentMonthRes.error;
+      if (openPreviousRes.error) throw openPreviousRes.error;
+
+      const combined = [...(currentMonthRes.data || []), ...(openPreviousRes.data || [])];
+      
+      // Sort in descending order by created_at or submission_date
+      combined.sort((a: any, b: any) => {
+        const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return dateB - dateA;
+      });
+
+      setRecords(combined);
     } catch (err) {
       console.error("Error fetching negotiations:", err);
     } finally {
