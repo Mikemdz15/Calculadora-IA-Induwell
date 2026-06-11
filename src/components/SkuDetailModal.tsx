@@ -54,32 +54,53 @@ export default function SkuDetailModal({ skuData, onClose, companyId }: SkuDetai
   const handleSaveCommentEdit = async (commentId: string) => {
     if (!editingCommentText.trim()) return;
     try {
-      const { error } = await supabase
-        .from('comments_history')
-        .update({ comment: editingCommentText.trim() })
-        .eq('id', commentId);
-      
-      if (error) throw error;
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const response = await fetch('/api/comments', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({ commentId, commentText: editingCommentText.trim() })
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'Failed to edit comment');
+      }
+
       setEditingCommentId(null);
       fetchComments();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Error al editar el comentario");
+      alert("Error al editar el comentario: " + err.message);
     }
   };
+
   const handleDeleteComment = async (commentId: string) => {
     if (!window.confirm("¿Estás seguro de que deseas eliminar este comentario permanentemente?")) return;
     try {
-      const { error } = await supabase
-        .from('comments_history')
-        .delete()
-        .eq('id', commentId);
-      
-      if (error) throw error;
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const response = await fetch(`/api/comments?id=${commentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : ''
+        }
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'Failed to delete comment');
+      }
+
       fetchComments();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Error al eliminar el comentario");
+      alert("Error al eliminar el comentario: " + err.message);
     }
   };
 
