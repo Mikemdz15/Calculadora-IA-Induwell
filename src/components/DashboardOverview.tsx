@@ -102,6 +102,14 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
           valA = a.skuInfo.leadTimeWeeks;
           valB = b.skuInfo.leadTimeWeeks;
           break;
+        case 'initialInventory':
+          valA = a.projections[0]?.initialInventory ?? 0;
+          valB = b.projections[0]?.initialInventory ?? 0;
+          break;
+        case 'minSafetyStock':
+          valA = a.skuInfo.minSafetyStock;
+          valB = b.skuInfo.minSafetyStock;
+          break;
         case 'minDeficit':
           valA = a.riskAssessment.minDeficitWeekIdx ?? (criticalSort.direction === 'asc' ? 999 : -1);
           valB = b.riskAssessment.minDeficitWeekIdx ?? (criticalSort.direction === 'asc' ? 999 : -1);
@@ -362,6 +370,8 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
         'Categoría': row.skuInfo.category,
         'Proveedor': row.skuInfo.supplier,
         'Lead Time (sem)': row.skuInfo.leadTimeWeeks,
+        'Inventario Actual': row.projections[0]?.initialInventory !== undefined ? Math.round(row.projections[0].initialInventory) : 0,
+        'Stock de Seguridad Mínimo': row.skuInfo.minSafetyStock !== undefined ? Math.round(row.skuInfo.minSafetyStock) : 0,
         'Ruptura (Mínimo)': minDefLabel,
         'Ruptura (Paro Planta)': stockoutLabel,
         'Alivio Proyectado': reliefText,
@@ -553,6 +563,8 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
                   <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCritical('category')}>Categoría {renderSortIcon('critical', 'category')}</th>
                   <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCritical('supplier')}>Proveedor {renderSortIcon('critical', 'supplier')}</th>
                   <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCritical('leadTime')}>Lead Time {renderSortIcon('critical', 'leadTime')}</th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCritical('initialInventory')}>Inventario Actual {renderSortIcon('critical', 'initialInventory')}</th>
+                  <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCritical('minSafetyStock')}>Stock Seg. Mínimo {renderSortIcon('critical', 'minSafetyStock')}</th>
                   <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCritical('minDeficit')}>Ruptura (Mínimo) {renderSortIcon('critical', 'minDeficit')}</th>
                   <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCritical('stockout')}>Ruptura (Paro Planta) {renderSortIcon('critical', 'stockout')}</th>
                   <th style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => handleSortCritical('relief')}>Alivio Proyectado {renderSortIcon('critical', 'relief')}</th>
@@ -667,6 +679,16 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
                       <td>
                         <span className="badge danger">{row.skuInfo.leadTimeWeeks} sem</span>
                       </td>
+                      <td>
+                        {row.projections[0]?.initialInventory !== undefined
+                          ? Math.round(row.projections[0].initialInventory).toLocaleString('en-US')
+                          : '0'}
+                      </td>
+                      <td>
+                        {row.skuInfo.minSafetyStock !== undefined
+                          ? Math.round(row.skuInfo.minSafetyStock).toLocaleString('en-US')
+                          : '0'}
+                      </td>
                       <td style={{ color: 'var(--warning)', fontWeight: 500 }}>{minDefLabel}</td>
                       <td style={{ color: 'var(--danger)', fontWeight: 'bold' }}>{stockoutLabel}</td>
                       <td>{reliefText}</td>
@@ -691,7 +713,7 @@ export default function DashboardOverview({ data, companyId }: DashboardOverview
                 })}
               {data.filter(row => row.riskAssessment.isCriticalRisk).length === 0 && (
                 <tr>
-                  <td colSpan={11} style={{ textAlign: 'center', padding: '2rem', opacity: 0.5 }}>
+                  <td colSpan={13} style={{ textAlign: 'center', padding: '2rem', opacity: 0.5 }}>
                     No hay materiales en riesgo crítico inminente para esta selección
                   </td>
                 </tr>
